@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Java基础," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="JDK原生实现动态代理由上一篇中的代理模式UML类图我们可以看出，代理类和被代理类需要依赖统一接口，代理类通过在接口方法的实现中增加增强逻辑并调用被代理类的实现，实现代理。这样客户端在调用的时候，代理类便可以替代被代理类，并且对外的调用接口相同。静态代理的局限性上篇博文中已经介绍过，即接口声明的方法过多的时候，我们需要逐一进行增强添加，这样在需求变更或者接口更改的时候就会非常麻烦。动态代理在静态代">
+<meta name="keywords" content="Java基础">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java与代理——JDK原生动态代理的实现">
+<meta property="og:url" content="https://jaydenransom.github.io/2017/07/29/Java与代理——JDK原生动态代理的实现/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="JDK原生实现动态代理由上一篇中的代理模式UML类图我们可以看出，代理类和被代理类需要依赖统一接口，代理类通过在接口方法的实现中增加增强逻辑并调用被代理类的实现，实现代理。这样客户端在调用的时候，代理类便可以替代被代理类，并且对外的调用接口相同。静态代理的局限性上篇博文中已经介绍过，即接口声明的方法过多的时候，我们需要逐一进行增强添加，这样在需求变更或者接口更改的时候就会非常麻烦。动态代理在静态代">
+<meta property="og:updated_time" content="2017-11-08T14:39:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java与代理——JDK原生动态代理的实现">
+<meta name="twitter:description" content="JDK原生实现动态代理由上一篇中的代理模式UML类图我们可以看出，代理类和被代理类需要依赖统一接口，代理类通过在接口方法的实现中增加增强逻辑并调用被代理类的实现，实现代理。这样客户端在调用的时候，代理类便可以替代被代理类，并且对外的调用接口相同。静态代理的局限性上篇博文中已经介绍过，即接口声明的方法过多的时候，我们需要逐一进行增强添加，这样在需求变更或者接口更改的时候就会非常麻烦。动态代理在静态代">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2017/07/29/Java与代理——JDK原生动态代理的实现/"/>
+
+
+
+
+
+  <title>Java与代理——JDK原生动态代理的实现 | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2017/07/29/Java与代理——JDK原生动态代理的实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Java与代理——JDK原生动态代理的实现</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-29T13:56:16+08:00">
+                2017-07-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java基础/" itemprop="url" rel="index">
+                    <span itemprop="name">Java基础</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="JDK原生实现动态代理"><a href="#JDK原生实现动态代理" class="headerlink" title="JDK原生实现动态代理"></a>JDK原生实现动态代理</h2><p>由上一篇中的代理模式UML类图我们可以看出，代理类和被代理类需要依赖统一接口，代理类通过在接口方法的实现中增加增强逻辑并调用被代理类的实现，实现代理。这样客户端在调用的时候，代理类便可以替代被代理类，并且对外的调用接口相同。<br>静态代理的局限性上篇博文中已经介绍过，即接口声明的方法过多的时候，我们需要逐一进行增强添加，这样在需求变更或者接口更改的时候就会非常麻烦。<br>动态代理在静态代理的基础上，通过Java提供的类通过反射在运行时动态获得接口信息，并对其进行增强。我们先看一个小例子：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line"> * 定义Produce接口，提供两个行为：分别为售货和支付</div><div class="line"> * Created by gaodongyan on 2017/7/17.</div><div class="line"> */</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Produce</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sale</span><span class="params">()</span></span>;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">pay</span><span class="params">(<span class="keyword">double</span> price)</span></span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * Created by gaodongyan on 2017/7/17.</div><div class="line"> * 定义代理类继承自InvocationHandler，内部持有被代理对象的引用</div><div class="line"> */</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SuperMarket</span> <span class="keyword">implements</span> <span class="title">InvocationHandler</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> Object producer;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SuperMarket</span><span class="params">(Object producer)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.producer = producer;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</div><div class="line">        <span class="comment">//proxy指代理对象，不是被代理的对象</span></div><div class="line">        System.out.println(proxy.getClass());</div><div class="line">        <span class="comment">//公共增强</span></div><div class="line">        System.out.println(<span class="string">"超市代理：公共增强"</span>);</div><div class="line">        <span class="comment">//针对方法的不同，进行不同的增强</span></div><div class="line">        <span class="keyword">if</span>(<span class="string">"sale"</span>.equals(method.getName())) &#123;</div><div class="line">            System.out.println(<span class="string">"超市代理：超市代理了生产者，进行销售"</span>);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="string">"pay"</span>.equals(method.getName())) &#123;</div><div class="line">            System.out.println(<span class="string">"超市代理：产品正在超市销售，超市赚取一定代理销售费用"</span>);</div><div class="line">        &#125;</div><div class="line">        <span class="comment">//调用被代理类的真实方法</span></div><div class="line">        method.invoke(producer, args);</div><div class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * Created by gaodongyan on 2017/7/17.</div><div class="line"> * 购买测试类，在该类主方法中进行动态代理的测试</div><div class="line"> */</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Buyer</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">        Produce producer = <span class="keyword">new</span> Producer();</div><div class="line">        <span class="comment">//InvocationHandler与代理类关联，可以理解为拦截器</span></div><div class="line">        InvocationHandler invocationHandler = <span class="keyword">new</span> SuperMarket(producer);</div><div class="line">        Produce proxy = (Produce) Proxy.newProxyInstance(invocationHandler.getClass().getClassLoader(), producer.getClass().getInterfaces(), invocationHandler);</div><div class="line">        proxy.sale();</div><div class="line">        proxy.pay(<span class="number">20.0</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">上述代码运行结果如下：</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">com</span>.<span class="title">sun</span>.<span class="title">proxy</span>.$<span class="title">Proxy0</span></span></div><div class="line">超市代理：公共增强</div><div class="line">超市代理：超市代理了生产者，进行销售</div><div class="line">生产者：我售出了一个货物</div><div class="line"><span class="title">class</span> <span class="title">com</span>.<span class="title">sun</span>.<span class="title">proxy</span>.$<span class="title">Proxy0</span></div><div class="line">超市代理：公共增强</div><div class="line">超市代理：产品正在超市销售，超市赚取一定代理销售费用</div><div class="line">生产者：该货物价格为：20.0</div></pre></td></tr></table></figure></p>
+<p>反观上例，我们在创建动态代理的过程中。实际上是自己实现一个实现了InvocationHandler的<code>拦截器</code>（这里的拦截器只是一种比喻，该说法不准确），其中包含一个被代理类的实例引用。<code>InvocationHandler</code>接口中只有一个<code>invoke(Object proxy, Method method, Object[] args)</code>方法，我们便在该方法中实现对于方法的增强。并在实现增强后，调用被代理类的方法。<br>在使用时，我们首先创建proxy对象。该对象关联一个<code>自定义InvocationHandler</code>对象和一个<code>被代理对象</code>。我们调用代理对象的方法时，会转向调用InvocationHandler中的invoke方法。这也就实现了代码的增强（理解起来和Spring AOP类似）。</p>
+<h2 id="JDK原生动态代理总结"><a href="#JDK原生动态代理总结" class="headerlink" title="JDK原生动态代理总结"></a>JDK原生动态代理总结</h2><p>在InvocationHandler的实现中，我们可以看到，我们可以对所有方法添加公共的增强；同时也可以针对方法增加特定的增强，这有着很大的灵活性。这也是动态代理的优点之一。但是仔细观察代码实现的原理，JDK原生动态代理是通过反射获得被代理对象所实现的接口方法，并对这些接口方法进行代理和增强。虽然相比静态代理，其免去了需要逐一代理，且当被代理对象实现多个接口的时候，无需为每一个接口创建一个代理类；但是其实现仍然受到接口的约束。这也是动态代理的不足之处。<br>下一篇博文中，将介绍有关使用cglib代码生成库实现动态代理的原理及方法。相比于JDK原生动态代理，cglib具有更大的灵活性。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java基础/" rel="tag"># Java基础</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/07/22/Java与代理———静态代理与动态代理/" rel="next" title="Java与代理———静态代理与动态代理">
+                <i class="fa fa-chevron-left"></i> Java与代理———静态代理与动态代理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/08/22/浅谈单例模式/" rel="prev" title="浅谈单例模式">
+                浅谈单例模式 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#JDK原生实现动态代理"><span class="nav-number">1.</span> <span class="nav-text">JDK原生实现动态代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JDK原生动态代理总结"><span class="nav-number">2.</span> <span class="nav-text">JDK原生动态代理总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
