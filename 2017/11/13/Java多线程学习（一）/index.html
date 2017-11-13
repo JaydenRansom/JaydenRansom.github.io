@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Java并发," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="操作系统级别的进程与线程进程一个计算机程序的运行实例。包含了需要执行的指令，有自己的独立地址空间，是互相隔离的。进程拥有各种资源和状态信息，包括打开的文件、子进程和信号处理。 线程表示程序的执行流程，是CPU调度执行的基本单位。线程有自己的程序计数器、相同的地址空间、同时共享进程所拥有的内存和其他资源。 Java中的并发编程简介并发编程的优点：并发编程可以使程序执行速度得到极大提高，或者为设计某些">
+<meta name="keywords" content="Java并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java多线程学习（一）">
+<meta property="og:url" content="https://jaydenransom.github.io/2017/11/13/Java多线程学习（一）/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="操作系统级别的进程与线程进程一个计算机程序的运行实例。包含了需要执行的指令，有自己的独立地址空间，是互相隔离的。进程拥有各种资源和状态信息，包括打开的文件、子进程和信号处理。 线程表示程序的执行流程，是CPU调度执行的基本单位。线程有自己的程序计数器、相同的地址空间、同时共享进程所拥有的内存和其他资源。 Java中的并发编程简介并发编程的优点：并发编程可以使程序执行速度得到极大提高，或者为设计某些">
+<meta property="og:updated_time" content="2017-11-13T15:32:32.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java多线程学习（一）">
+<meta name="twitter:description" content="操作系统级别的进程与线程进程一个计算机程序的运行实例。包含了需要执行的指令，有自己的独立地址空间，是互相隔离的。进程拥有各种资源和状态信息，包括打开的文件、子进程和信号处理。 线程表示程序的执行流程，是CPU调度执行的基本单位。线程有自己的程序计数器、相同的地址空间、同时共享进程所拥有的内存和其他资源。 Java中的并发编程简介并发编程的优点：并发编程可以使程序执行速度得到极大提高，或者为设计某些">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2017/11/13/Java多线程学习（一）/"/>
+
+
+
+
+
+  <title>Java多线程学习（一） | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2017/11/13/Java多线程学习（一）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Java多线程学习（一）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-13T23:21:13+08:00">
+                2017-11-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mutithread/" itemprop="url" rel="index">
+                    <span itemprop="name">Java并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="操作系统级别的进程与线程"><a href="#操作系统级别的进程与线程" class="headerlink" title="操作系统级别的进程与线程"></a>操作系统级别的进程与线程</h2><h3 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h3><p>一个计算机程序的运行实例。包含了需要执行的指令，有自己的独立地址空间，是互相隔离的。进程拥有各种资源和状态信息，包括打开的文件、子进程和信号处理。</p>
+<h3 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h3><p>表示程序的执行流程，是CPU调度执行的基本单位。线程有自己的程序计数器、相同的地址空间、同时共享进程所拥有的内存和其他资源。</p>
+<h2 id="Java中的并发编程简介"><a href="#Java中的并发编程简介" class="headerlink" title="Java中的并发编程简介"></a>Java中的并发编程简介</h2><h3 id="并发编程的优点："><a href="#并发编程的优点：" class="headerlink" title="并发编程的优点："></a>并发编程的优点：</h3><p>并发编程可以使程序执行速度得到极大提高，或者为设计某些类型的程序提供更易用的模型。</p>
+<h3 id="Java中并发的常用之处："><a href="#Java中并发的常用之处：" class="headerlink" title="Java中并发的常用之处："></a>Java中并发的常用之处：</h3><p>Web应用是最常见的Java系统之一，而基本的Web库类、Servlet具有天生的多线程性。此外，图形化用户界面Swing和SWT类库都拥有针对线程安全的机制，要熟练的掌握仍然需要理解并发。</p>
+<h3 id="Java线程机制简介："><a href="#Java线程机制简介：" class="headerlink" title="Java线程机制简介："></a>Java线程机制简介：</h3><p>Java线程机制是抢占式（非协作式）的，这意味着调度机制会周期性地中断线程，将上下文切换到另一个线程。</p>
+<h2 id="Java中的简单线程编程实现"><a href="#Java中的简单线程编程实现" class="headerlink" title="Java中的简单线程编程实现"></a>Java中的简单线程编程实现</h2><h3 id="java中实现最简单的线程编程"><a href="#java中实现最简单的线程编程" class="headerlink" title="java中实现最简单的线程编程"></a>java中实现最简单的线程编程</h3><h4 id="定义任务"><a href="#定义任务" class="headerlink" title="定义任务"></a>定义任务</h4><p>　　要想定义任务，则需要实现Runnable接口并编写run( )方法，使得该任务可以执行自己的想法。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line"> * <span class="doctag">@author</span> Jayden Ransom</div><div class="line"> * mainTask类实现Runnable接口定义一个任务，testMain在主线程中启动该任务。</div><div class="line"> * </div><div class="line"> * */</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MainTask</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</div><div class="line">    <span class="keyword">private</span> <span class="keyword">int</span> numIncrease = <span class="number">1</span>;</div><div class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> taskIncrease = <span class="number">1</span>;</div><div class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> taskId = taskIncrease++;</div><div class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="string">"这是第"</span> + taskId + <span class="string">"个正在执行的任务的第"</span> + numIncrease + <span class="string">"次执行"</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="comment">//创建任务，必须编写run方法，这将被调用从而启动任务</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">while</span>(numIncrease &lt;= <span class="number">10</span>) &#123;</div><div class="line">            System.out.println( toString() );</div><div class="line">            numIncrease++;</div><div class="line">            </div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>注: <code>要想从Runnable导出一个类，则这个类必须有run( )方法</code><br>    <code>实现Runnable接口只是定义一个任务，该类并没有任何内在的线程能力</code><br>下面的实例中，我们在主方法中实例化MainTask类来在主线程（分配给main的那个线程）中调用此任务。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//在TestMain的主方法中，通过创建MainTask类的对象在主线程中调用此任务</span></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestMain</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> </span>&#123;</div><div class="line">        MainTask mainTask = <span class="keyword">new</span> MainTask();</div><div class="line">        mainTask.run();</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="comment">/*Sample Output:</span></div><div class="line">这是第1个正在执行的任务的第1次执行</div><div class="line">这是第1个正在执行的任务的第2次执行</div><div class="line">这是第1个正在执行的任务的第3次执行</div><div class="line">这是第1个正在执行的任务的第4次执行</div><div class="line">这是第1个正在执行的任务的第5次执行</div><div class="line">这是第1个正在执行的任务的第6次执行</div><div class="line">这是第1个正在执行的任务的第7次执行</div><div class="line">这是第1个正在执行的任务的第8次执行</div><div class="line">这是第1个正在执行的任务的第9次执行</div><div class="line">这是第1个正在执行的任务的第10次执行</div><div class="line">*/</div></pre></td></tr></table></figure></p>
+<h4 id="驱动任务"><a href="#驱动任务" class="headerlink" title="驱动任务"></a>驱动任务</h4><p>　　经过上面对 <code>定义任务</code> 的了解，相信大家已经对于如何在java中创建任务有了了解。但是单单定义任务并不能满足我们的需要。我们的目的是将定义的Runnable对象转变为工作任务。<br>　　要想驱动任务，则需要将这个Runnable对象提交给一个Thread构造器。</p>
+<p>Thread类的最基本方法：</p>
+<pre><code>- Thread.start( )方法：该方法为该线程（即将执行构造器中的任务的线程）执行必需的初始化操作，然后调用Runnable的run( )方法，从而在这个新线程中启动该任务。
+- Thread.sleep( int )方法：该方法的参数为以毫秒（ms）为单位，意在中止当前线程执行的任务指定的时间。但是该写法已经过时，目前Java SE（5/6及以上）新写法为 TimeUnit.MILLISECONDS.sleep( int )
+-Thread.yield( )方法：该方法的调用是对线程调度器的一种建议。这一方法的调用意在声明该进程中正在执行的任务已经完成了生命周期中最重要的部分了，此刻将时间片分给其他任务使用会造成比较小的额外开销。
+</code></pre><p>有关于更多关于Thread类的方法的在后续文章中会逐步介绍。</p>
+<p>下面这个例子展示了如何通过Thread类来驱动任务<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line"> * <span class="doctag">@author</span> Jayden Ransom</div><div class="line"> * 将定义好的任务交给Thread构造器，利用Thread驱动任务。</div><div class="line"> * 这里中的MainTask类已经在上面的代码中定义，故此处不再重复定义</div><div class="line"> * */</div><div class="line"></div><div class="line"> <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ThreadTest</span> </span>&#123;</div><div class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> </span>&#123;</div><div class="line">         Thread testThread = <span class="keyword">new</span> Thread(<span class="keyword">new</span> MainTask());</div><div class="line">         testThread.start();</div><div class="line">         System.out.println(<span class="string">"任务已初始化完毕"</span>);</div><div class="line">     &#125;</div><div class="line"> &#125;</div><div class="line"><span class="comment">/*Sample Output:</span></div><div class="line">所有任务已经准备就绪</div><div class="line">这是第1个正在执行的任务的第1次执行</div><div class="line">这是第1个正在执行的任务的第2次执行</div><div class="line">这是第1个正在执行的任务的第3次执行</div><div class="line">这是第1个正在执行的任务的第4次执行</div><div class="line">这是第1个正在执行的任务的第5次执行</div><div class="line">这是第1个正在执行的任务的第6次执行</div><div class="line">这是第1个正在执行的任务的第7次执行</div><div class="line">这是第1个正在执行的任务的第8次执行</div><div class="line">这是第1个正在执行的任务的第9次执行</div><div class="line">这是第1个正在执行的任务的第10次执行</div><div class="line">*/</div></pre></td></tr></table></figure></p>
+<p>下面这个例子显示了如何创建多个线程，同时驱动多个任务（由于输出过多，样例输出省略了一部分）<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line"> * <span class="doctag">@author</span> Jayden Ransom</div><div class="line"> * 将定义好的任务交给多个Thread构造器，利用Thread驱动多个任务。</div><div class="line"> * </div><div class="line"> * */</div><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MoreThreadTest</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> </span>&#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</div><div class="line">            <span class="keyword">new</span> Thread(<span class="keyword">new</span> MainTask()).start();</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="comment">/*Sample Output:</span></div><div class="line">这是第2个正在执行的任务的第1次执行</div><div class="line">这是第5个正在执行的任务的第1次执行</div><div class="line">.</div><div class="line">.</div><div class="line">.</div><div class="line">这是第1个正在执行的任务的第2次执行</div><div class="line">这是第1个正在执行的任务的第3次执行</div><div class="line">这是第1个正在执行的任务的第4次执行</div><div class="line">这是第1个正在执行的任务的第5次执行</div><div class="line">.</div><div class="line">.</div><div class="line">这是第5个正在执行的任务的第5次执行</div><div class="line">.</div><div class="line">.</div><div class="line">这是第5个正在执行的任务的第9次执行</div><div class="line">这是第5个正在执行的任务的第10次执行</div><div class="line">.</div><div class="line">.</div><div class="line">.</div><div class="line">这是第2个正在执行的任务的第9次执行</div><div class="line">这是第4个正在执行的任务的第6次执行</div><div class="line">这是第4个正在执行的任务的第7次执行</div><div class="line">.</div><div class="line">.</div><div class="line">这是第3个正在执行的任务的第9次执行</div><div class="line">这是第3个正在执行的任务的第10次执行</div><div class="line">这是第1个正在执行的任务的第10次执行</div><div class="line">这是第4个正在执行的任务的第10次执行</div><div class="line">这是第2个正在执行的任务的第10次执行</div><div class="line"></div><div class="line">*/</div></pre></td></tr></table></figure></p>
+<h3 id="管理多个Thread"><a href="#管理多个Thread" class="headerlink" title="管理多个Thread"></a>管理多个Thread</h3><p>之前我们接触的例子都是只有一个任务，并由一个Thread对象驱动的简单例子。但往往在我们的实际编程中，会有好多时候需要多个Thread对象驱动任务，这里我们引进Java SE5的java.util.concurrent包中的Executor（执行器）类。Executor类将为我们管理Thread对象，从而简化并发编程。<br>下面是一个简单的使用Executor的例子:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line"> * <span class="doctag">@author</span> Jayden Ransom</div><div class="line"> * 使用Executor的例子</div><div class="line"> * */</div><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ExecutorTest</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> </span>&#123;</div><div class="line">        <span class="comment">//使用静态方法创建Executor对象</span></div><div class="line">        ExecutorService exec = Executors.newCachedThreadPool();</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</div><div class="line">            exec.execute(<span class="keyword">new</span> MainTask() );</div><div class="line">        </div><div class="line">        &#125;</div><div class="line">                <span class="comment">//这里对shutdown()方法的调用是防止新的任务添加到这个Executor   </span></div><div class="line">        exec.shutdown();</div><div class="line">    &#125;</div><div class="line">&#125;   </div><div class="line"><span class="comment">/*Sample Output:</span></div><div class="line">这是第2个正在执行的任务的第1次执行</div><div class="line">这是第1个正在执行的任务的第1次执行</div><div class="line">这是第1个正在执行的任务的第2次执行</div><div class="line">这是第1个正在执行的任务的第3次执行</div><div class="line">...</div><div class="line">这是第2个正在执行的任务的第10次执行</div><div class="line">这是第4个正在执行的任务的第7次执行</div><div class="line">这是第4个正在执行的任务的第8次执行</div><div class="line">...</div><div class="line">这是第3个正在执行的任务的第9次执行</div><div class="line">这是第4个正在执行的任务的第9次执行</div><div class="line">这是第4个正在执行的任务的第10次执行</div><div class="line">这是第3个正在执行的任务的第10次执行</div><div class="line"></div><div class="line">*/</div></pre></td></tr></table></figure></p>
+<p>注：</p>
+<pre><code>- 在例子中我们创建的是一个ExecutorService对象，该对象是使用静态的Executor方法创建的。在这里同样你可能还注意到了我们在初始化Executor对象的时候用的方法是Executors类的 newCachedThreadPool( )方法，这里我们同样还可以调用其他的方法　　　　对ExecutorService对象进行初始化，例如newFixedThreadPool( )方法。
+`二者区别`：CachedThreadPool将为每个任务都创建一个线程。而利用FixedThreadPool，可以一次性预先执行代价高昂的线程分配，因而也就可以限制线程的数　　　　　　　　　　量了（相比CachedThreadPool，可以节省每次创建线程的开销）。
+</code></pre><p>　　 - ExecutorService对象是使用静态的Executor方法创建的，这个方法可以确定其Executor类型</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>有了以上的理解，应该对基本的任务以及线程的概念有了一些基本概念。但这仅仅是一个开始，在下一篇博文中，将继续介绍有关线程的知识（重点是对线程的异常问题及共享受限资源的解释）。</p>
+<p>参考书籍：《Java编程思想》</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java并发/" rel="tag"># Java并发</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/11/08/Java内存模型初探/" rel="next" title="Java内存模型初探">
+                <i class="fa fa-chevron-left"></i> Java内存模型初探
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#操作系统级别的进程与线程"><span class="nav-number">1.</span> <span class="nav-text">操作系统级别的进程与线程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#进程"><span class="nav-number">1.1.</span> <span class="nav-text">进程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程"><span class="nav-number">1.2.</span> <span class="nav-text">线程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java中的并发编程简介"><span class="nav-number">2.</span> <span class="nav-text">Java中的并发编程简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#并发编程的优点："><span class="nav-number">2.1.</span> <span class="nav-text">并发编程的优点：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Java中并发的常用之处："><span class="nav-number">2.2.</span> <span class="nav-text">Java中并发的常用之处：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Java线程机制简介："><span class="nav-number">2.3.</span> <span class="nav-text">Java线程机制简介：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java中的简单线程编程实现"><span class="nav-number">3.</span> <span class="nav-text">Java中的简单线程编程实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#java中实现最简单的线程编程"><span class="nav-number">3.1.</span> <span class="nav-text">java中实现最简单的线程编程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#定义任务"><span class="nav-number">3.1.1.</span> <span class="nav-text">定义任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#驱动任务"><span class="nav-number">3.1.2.</span> <span class="nav-text">驱动任务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#管理多个Thread"><span class="nav-number">3.2.</span> <span class="nav-text">管理多个Thread</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
