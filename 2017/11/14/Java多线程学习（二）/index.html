@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Java并发," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="定义产生返回值的任务在上一篇文的介绍中，我们知道了定义任务通常的方法是定义一个实现Runnable接口的类，这个类被我们成为任务。然而也很容易注意到，任务的最重要的一个方法就是run( )方法，而`run( )方法`是没有返回值的，也就是说我们之前定义的任务不返回任何值。  如果想要定义一个有返回值的任务，则需要编写一个实现`Callable接口`的类。Callable是一种具有类型参数的泛型，他">
+<meta name="keywords" content="Java并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java多线程学习（二）">
+<meta property="og:url" content="https://jaydenransom.github.io/2017/11/14/Java多线程学习（二）/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="定义产生返回值的任务在上一篇文的介绍中，我们知道了定义任务通常的方法是定义一个实现Runnable接口的类，这个类被我们成为任务。然而也很容易注意到，任务的最重要的一个方法就是run( )方法，而`run( )方法`是没有返回值的，也就是说我们之前定义的任务不返回任何值。  如果想要定义一个有返回值的任务，则需要编写一个实现`Callable接口`的类。Callable是一种具有类型参数的泛型，他">
+<meta property="og:updated_time" content="2017-11-14T14:29:32.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java多线程学习（二）">
+<meta name="twitter:description" content="定义产生返回值的任务在上一篇文的介绍中，我们知道了定义任务通常的方法是定义一个实现Runnable接口的类，这个类被我们成为任务。然而也很容易注意到，任务的最重要的一个方法就是run( )方法，而`run( )方法`是没有返回值的，也就是说我们之前定义的任务不返回任何值。  如果想要定义一个有返回值的任务，则需要编写一个实现`Callable接口`的类。Callable是一种具有类型参数的泛型，他">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2017/11/14/Java多线程学习（二）/"/>
+
+
+
+
+
+  <title>Java多线程学习（二） | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2017/11/14/Java多线程学习（二）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Java多线程学习（二）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-14T22:23:03+08:00">
+                2017-11-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mutithread/" itemprop="url" rel="index">
+                    <span itemprop="name">Java并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="定义产生返回值的任务"><a href="#定义产生返回值的任务" class="headerlink" title="定义产生返回值的任务"></a>定义产生返回值的任务</h2><pre><code>在上一篇文的介绍中，我们知道了定义任务通常的方法是定义一个实现Runnable接口的类，这个类被我们成为任务。然而也很容易注意到，任务的最重要的一个方法就是run( )方法，而`run( )方法`是没有返回值的，也就是说我们之前定义的任务不返回任何值。
+
+如果想要定义一个有返回值的任务，则需要编写一个实现`Callable接口`的类。Callable是一种具有类型参数的泛型，他的类型参数表示的是call( )方法的返回值类型。
+</code></pre><p>示例如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> java.util.concurrent.Callable;</div><div class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</div><div class="line"><span class="keyword">import</span> java.util.concurrent.ExecutorService;</div><div class="line"><span class="keyword">import</span> java.util.concurrent.Executors;</div><div class="line"><span class="keyword">import</span> java.util.concurrent.Future;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * <span class="doctag">@author</span> Gao</div><div class="line"> * Date:2016.5</div><div class="line"> * */</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Task</span> <span class="keyword">implements</span> <span class="title">Callable</span>&lt;<span class="title">String</span>&gt; </span>&#123;</div><div class="line">    <span class="keyword">int</span> testNum;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Task</span><span class="params">(<span class="keyword">int</span> testNum)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.testNum = testNum;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">call</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="string">"Test number is "</span> + testNum;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ReturnedDemo</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">        <span class="comment">//创建ExecutorService的实例化对象，用来执行任务。</span></div><div class="line">        ExecutorService exec = Executors.newCachedThreadPool();</div><div class="line">        Future&lt;String&gt; future = exec.submit(<span class="keyword">new</span> Task(<span class="number">123</span>));</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            </div><div class="line">            System.out.println(future.get());</div><div class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</div><div class="line">            <span class="comment">// TODO 自动生成的 catch 块</span></div><div class="line">            e.printStackTrace();</div><div class="line">        &#125; <span class="keyword">catch</span> (ExecutionException e) &#123;</div><div class="line">            <span class="comment">// TODO 自动生成的 catch 块</span></div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line">        </div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="comment">/*Output:</span></div><div class="line">Test number is 123</div><div class="line">*/</div></pre></td></tr></table></figure></p>
+<p>在上面的示例代码中你可能会不了解Future<t>的含义。ExecutorService类的实例化对象在调用submit( )方法时会返回Future<t>类型的返回值，我们在这里实例化的future对象用来保存该返回值，在之后用来处理和其他过程。同时，在调用get( )方法时会产生异常，所以该段用try-catch块进行包围。</t></t></p>
+<h2 id="线程的优先级与让步"><a href="#线程的优先级与让步" class="headerlink" title="线程的优先级与让步"></a>线程的优先级与让步</h2><h3 id="线程的优先级"><a href="#线程的优先级" class="headerlink" title="线程的优先级"></a>线程的优先级</h3><p>线程由线程调度器调用执行，线程调度器进行线程调度的时候倾向于让优先级高的线程先运行。但是由于CPU处理线程集的顺序是不固定的，因此线程调度器只是起到一个“建议”的作用，而不是决定性作用。同时，线程优先级只是代表线程集中的线程执行的频率。高优先级的线程执行的频率较高，但是低优先级的线程也会得到执行。</p>
+<p>由于不同操作系统的优先级不同且和JDK的优先级不同（JDK有10个优先级），所以JDK和操作系统优先级的映射不是很好。通常我们在调整优先级的时候，仅仅使用MAX_PRIORITY、NORM_PRIORITY、MIN_PRIORITY三种级别。</p>
+<p>示例代码如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> java.util.concurrent.ExecutorService;</div><div class="line"><span class="keyword">import</span> java.util.concurrent.Executors;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * <span class="doctag">@author</span> Gao</div><div class="line"> * Date:2016.5</div><div class="line"> * */</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">PriorityTask</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> priority;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PriorityTask</span><span class="params">(<span class="keyword">int</span> priority)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.priority = priority;</div><div class="line">    &#125;</div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">        Thread.currentThread().setPriority(priority);</div><div class="line">        System.out.println(<span class="keyword">this</span>);</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> Thread.currentThread() + <span class="string">";"</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PriorityTest</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">        ExecutorService exec = Executors.newCachedThreadPool();</div><div class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) </div><div class="line">            exec.execute(<span class="keyword">new</span> PriorityTask(Thread.MAX_PRIORITY));</div><div class="line">        exec.execute(<span class="keyword">new</span> PriorityTask(Thread.MIN_PRIORITY));</div><div class="line">        exec.shutdown();</div><div class="line">        </div><div class="line">    &#125;</div><div class="line">&#125;    </div><div class="line"><span class="comment">/*Output:</span></div><div class="line">Thread[pool-1-thread-3,10,main];</div><div class="line">Thread[pool-1-thread-4,10,main];</div><div class="line">Thread[pool-1-thread-1,10,main];</div><div class="line">Thread[pool-1-thread-5,10,main];</div><div class="line">Thread[pool-1-thread-2,10,main];</div><div class="line">Thread[pool-1-thread-6,1,main];</div><div class="line"></div><div class="line">*/</div></pre></td></tr></table></figure></p>
+<p>在该示例中，我们通过给线程设置不同的优先级来定义线程，在线程的信息中会显示其优先级。</p>
+<h3 id="线程的让步"><a href="#线程的让步" class="headerlink" title="线程的让步"></a>线程的让步</h3><p>在第一篇文章的介绍中，我们在例子中应用了Thread.yield( )这一方法，这个方法表现的就是线程的让步。通常我们在run( )方法的其他方法体执行完成之后执行这一方法，意在给线程调度器发送一个信号，告诉线程调度器自己的工作已经基本执行完毕，可以将CPU分配给其他线程进行使用了。但是和上面的线程优先级中的介绍一样，由于CPU处理现有线程集的顺序是不确定的，所以yield( )方法只是给调度器一个建议，并不是真正的在执行yield( )方法后就将CPU分给其他同级别需要CPU的线程。</p>
+<h3 id="后台线程"><a href="#后台线程" class="headerlink" title="后台线程"></a>后台线程</h3><h4 id="后台线程的定义：后台线程是指在程序运行的时候在后台提供一种通用服务的线程，这种线程一般不属于程序不可缺少的部分。"><a href="#后台线程的定义：后台线程是指在程序运行的时候在后台提供一种通用服务的线程，这种线程一般不属于程序不可缺少的部分。" class="headerlink" title="后台线程的定义：后台线程是指在程序运行的时候在后台提供一种通用服务的线程，这种线程一般不属于程序不可缺少的部分。"></a>后台线程的定义：后台线程是指在程序运行的时候在后台提供一种通用服务的线程，这种线程一般不属于程序不可缺少的部分。</h4><h4 id="后台线程的设置：利用线程对象调用setDaemon-方法，可将其设置为后台线程。"><a href="#后台线程的设置：利用线程对象调用setDaemon-方法，可将其设置为后台线程。" class="headerlink" title="后台线程的设置：利用线程对象调用setDaemon( )方法，可将其设置为后台线程。"></a>后台线程的设置：利用线程对象调用setDaemon( )方法，可将其设置为后台线程。</h4><p>注：必须在线程启动之前设置，才能成功将其设置为后台线程。</p>
+<h2 id="与线程有关的异常问题"><a href="#与线程有关的异常问题" class="headerlink" title="与线程有关的异常问题"></a>与线程有关的异常问题</h2><p>提起异常，想必大家都不会感到陌生。对于多线程编程中来说，如果你不采用一些步骤来捕获这些异常，则一旦异常逃出任务的run( )方法，它就会向外传播到控制台。</p>
+<p>目前为了解决线程异常捕获的问题，我们可以通过修改Executor产生线程的方式。实现的基础是Java提供的接口：Thread.UncaughtExceptionHandler。该接口允许程序员在编写的每个Thread对象上都附着一个异常处理器。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java并发/" rel="tag"># Java并发</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/11/13/Java多线程学习（一）/" rel="next" title="Java多线程学习（一）">
+                <i class="fa fa-chevron-left"></i> Java多线程学习（一）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#定义产生返回值的任务"><span class="nav-number">1.</span> <span class="nav-text">定义产生返回值的任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#线程的优先级与让步"><span class="nav-number">2.</span> <span class="nav-text">线程的优先级与让步</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#线程的优先级"><span class="nav-number">2.1.</span> <span class="nav-text">线程的优先级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程的让步"><span class="nav-number">2.2.</span> <span class="nav-text">线程的让步</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#后台线程"><span class="nav-number">2.3.</span> <span class="nav-text">后台线程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#后台线程的定义：后台线程是指在程序运行的时候在后台提供一种通用服务的线程，这种线程一般不属于程序不可缺少的部分。"><span class="nav-number">2.3.1.</span> <span class="nav-text">后台线程的定义：后台线程是指在程序运行的时候在后台提供一种通用服务的线程，这种线程一般不属于程序不可缺少的部分。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#后台线程的设置：利用线程对象调用setDaemon-方法，可将其设置为后台线程。"><span class="nav-number">2.3.2.</span> <span class="nav-text">后台线程的设置：利用线程对象调用setDaemon( )方法，可将其设置为后台线程。</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#与线程有关的异常问题"><span class="nav-number">3.</span> <span class="nav-text">与线程有关的异常问题</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
