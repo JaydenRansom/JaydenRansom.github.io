@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Java并发," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="Java 中线程的基本状态Java 线程状态简介Java 语言中，线程共有六种状态，分别简介如下：  NEW ：线程已经创建，未调用 start 方法 RUNNABLE ：运行状态，该状态包括线程的就绪、运行两个状态 BLOCKED ：阻塞状态，通常线程在等待锁的过程为该状态 WAITING ：等待状态，当前线程需要等待其他线程作出通知或中断 TIME_WAITING ：超时等待状态，其与 WAI">
+<meta name="keywords" content="Java并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java多线程学习（三）">
+<meta property="og:url" content="https://jaydenransom.github.io/2017/11/29/Java多线程学习（三）/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="Java 中线程的基本状态Java 线程状态简介Java 语言中，线程共有六种状态，分别简介如下：  NEW ：线程已经创建，未调用 start 方法 RUNNABLE ：运行状态，该状态包括线程的就绪、运行两个状态 BLOCKED ：阻塞状态，通常线程在等待锁的过程为该状态 WAITING ：等待状态，当前线程需要等待其他线程作出通知或中断 TIME_WAITING ：超时等待状态，其与 WAI">
+<meta property="og:image" content="http://ot4u9yaqn.bkt.clouddn.com/java_thread.png">
+<meta property="og:image" content="http://ot4u9yaqn.bkt.clouddn.com/jps.png">
+<meta property="og:image" content="http://ot4u9yaqn.bkt.clouddn.com/jstack.png">
+<meta property="og:image" content="http://ot4u9yaqn.bkt.clouddn.com/stack_info.png">
+<meta property="og:updated_time" content="2017-11-29T11:32:06.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java多线程学习（三）">
+<meta name="twitter:description" content="Java 中线程的基本状态Java 线程状态简介Java 语言中，线程共有六种状态，分别简介如下：  NEW ：线程已经创建，未调用 start 方法 RUNNABLE ：运行状态，该状态包括线程的就绪、运行两个状态 BLOCKED ：阻塞状态，通常线程在等待锁的过程为该状态 WAITING ：等待状态，当前线程需要等待其他线程作出通知或中断 TIME_WAITING ：超时等待状态，其与 WAI">
+<meta name="twitter:image" content="http://ot4u9yaqn.bkt.clouddn.com/java_thread.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2017/11/29/Java多线程学习（三）/"/>
+
+
+
+
+
+  <title>Java多线程学习（三） | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2017/11/29/Java多线程学习（三）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Java多线程学习（三）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-29T15:04:37+08:00">
+                2017-11-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mutithread/" itemprop="url" rel="index">
+                    <span itemprop="name">Java并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="Java-中线程的基本状态"><a href="#Java-中线程的基本状态" class="headerlink" title="Java 中线程的基本状态"></a>Java 中线程的基本状态</h2><h3 id="Java-线程状态简介"><a href="#Java-线程状态简介" class="headerlink" title="Java 线程状态简介"></a>Java 线程状态简介</h3><p>Java 语言中，线程共有六种状态，分别简介如下：</p>
+<ul>
+<li><code>NEW</code> ：线程已经创建，未调用 start 方法</li>
+<li><code>RUNNABLE</code> ：运行状态，该状态包括线程的就绪、运行两个状态</li>
+<li><code>BLOCKED</code> ：阻塞状态，通常线程在等待锁的过程为该状态</li>
+<li><code>WAITING</code> ：等待状态，当前线程需要等待其他线程作出通知或中断</li>
+<li><code>TIME_WAITING</code> ：超时等待状态，其与 WAITING 状态不同点为超时等待可在一段时间后自行返回</li>
+<li><code>TERMINATED</code> ：终止状态，当前线程已经执行完毕</li>
+</ul>
+<p>Java线程状态转换关系图如下图：<br><img src="http://ot4u9yaqn.bkt.clouddn.com/java_thread.png" alt="java_thread"><br>由线程状态转换图中可以很清晰的看出Java语言中线程状态的转换关系，下面展示一个示例，该示例主要是通过构造线程并模拟出线程当前的状态。具体代码及查看如下。</p>
+<h2 id="Java线程状态实探"><a href="#Java线程状态实探" class="headerlink" title="Java线程状态实探"></a>Java线程状态实探</h2><h3 id="从一个实例谈起"><a href="#从一个实例谈起" class="headerlink" title="从一个实例谈起"></a>从一个实例谈起</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line"> * <span class="doctag">@description</span>: 模拟线程运行时状态</div><div class="line"> * <span class="doctag">@author</span>: jayden</div><div class="line"> * <span class="doctag">@date</span>: 2017/11/29</div><div class="line"> */</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ThreadStatus</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">        <span class="keyword">new</span> Thread(<span class="keyword">new</span> TimeWaiting(), <span class="string">"TimeWaiting Thread"</span>).start();</div><div class="line">        <span class="keyword">new</span> Thread(<span class="keyword">new</span> Waiting(), <span class="string">"Waiting Thread"</span>).start();</div><div class="line">        <span class="keyword">new</span> Thread(<span class="keyword">new</span> Blocked(), <span class="string">"GetLock Thread"</span>).start();</div><div class="line">        <span class="keyword">new</span> Thread(<span class="keyword">new</span> Blocked(), <span class="string">"Blocked Thread"</span>).start();</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * 构造线程的time_waiting状态</div><div class="line"> */</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">TimeWaiting</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            TimeUnit.SECONDS.sleep(<span class="number">100</span>);</div><div class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line"></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * 模拟线程的waiting状态</div><div class="line"> */</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Waiting</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</div><div class="line">            <span class="keyword">try</span> &#123;</div><div class="line">                <span class="keyword">this</span>.wait();</div><div class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</div><div class="line">                e.printStackTrace();</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * 模拟线程的blocked状态</div><div class="line"> */</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Blocked</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">synchronized</span> (Blocked.class) &#123;</div><div class="line">            <span class="keyword">try</span> &#123;</div><div class="line">                TimeUnit.SECONDS.sleep(<span class="number">200</span>);</div><div class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</div><div class="line">                e.printStackTrace();</div><div class="line">            &#125;</div><div class="line"></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>运行上述代码，我们可以通过 Java 自带的小工具 jstack 查看线程信息。具体操作如下：</p>
+<ol>
+<li>打开 commond，输入 jps 命令，查看全部 Java 线程的 pid，如下图：<br><img src="http://ot4u9yaqn.bkt.clouddn.com/jps.png" alt="jps"><br>由图中可以看出，当前系统中有三个 Java 进程在运行，我们要查看的便是 pid 为 17628 的 ThreadStatus 进程。</li>
+<li>输入 jstack [pid]，查看进程信息，如下图：<br><img src="http://ot4u9yaqn.bkt.clouddn.com/jstack.png" alt="jstack"></li>
+<li>分析线程信息。<br>查看 jstack 输出的信息，我们可以找到我们在程序中启动的四个进程，如下图：<br><img src="http://ot4u9yaqn.bkt.clouddn.com/stack_info.png" alt="stack_info"><br>由图中信息可以看出：</li>
+</ol>
+<ul>
+<li>Blocked Thread 线程当前为 <code>BLOCKED</code> 状态，正在等待获取 Blocked.class 对象的锁；</li>
+<li>GetLock Thread 线程当前为 <code>TIMED_WAITING</code> 状态，这是因为它获取到了 Blocked.class 对象的锁，并通过 sleep() 进入了超时等待状态；</li>
+<li>Waiting Thread 线程当前为 <code>WAITING</code> 状态，这是因为它获取到了自身对象的锁，并通过 wait() 方法进入了等待状态；</li>
+<li>TimeWaiting Thread 线程当前为 <code>TIMED_WAITING</code> 状态，其并未获得任何锁，仅是通过 TimeUnit.SECONDS.sleep() 方法使得当前线程进入超时等待状态。</li>
+</ul>
+<h3 id="再看示例程序"><a href="#再看示例程序" class="headerlink" title="再看示例程序"></a>再看示例程序</h3><h4 id="TimeWaiting"><a href="#TimeWaiting" class="headerlink" title="TimeWaiting"></a>TimeWaiting</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">TimeWaiting</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            TimeUnit.SECONDS.sleep(<span class="number">100</span>);</div><div class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line"></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>TimeWaiting 类的定义中，未获得任何对象的锁，仅是通过 TimeUnit.SECONDS.sleep() 方法使得当前线程进入 <em>超时等待</em> 状态。<br>注：此处 TimeUnit.SECONDS.sleep() 方法与 Thread.sleep() 方法使用类似。但在可读性上，TimeUnit.SECONDS.sleep() 方法更优。</p>
+<h4 id="Waiting"><a href="#Waiting" class="headerlink" title="Waiting"></a>Waiting</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Waiting</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</div><div class="line">            <span class="keyword">try</span> &#123;</div><div class="line">                <span class="keyword">this</span>.wait();</div><div class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</div><div class="line">                e.printStackTrace();</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>Waiting 类的定义中，我们通过 Object.wait() 方法使得线程进入等待状态。此处获取对象锁的原因是由于 Java 语言中，当某个线程试图等待一个自己并不拥有的对象（O）的监控器或者通知其他线程等待该对象（O）的监控器时，会抛出 <code>java.lang.IllegalMonitorStateException</code> 异常。<br>调用 wait() 方法后，当前线程状态便变成了 <em>等待</em> 状态。</p>
+<h4 id="Blocked"><a href="#Blocked" class="headerlink" title="Blocked"></a>Blocked</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Blocked</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">synchronized</span> (Blocked.class) &#123;</div><div class="line">            <span class="keyword">try</span> &#123;</div><div class="line">                TimeUnit.SECONDS.sleep(<span class="number">200</span>);</div><div class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</div><div class="line">                e.printStackTrace();</div><div class="line">            &#125;</div><div class="line"></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>Blocked 类的定义中，首先该线程需要获取 Blocked.class 对象的对象锁，然后对当前线程执行 sleep，进入超时等待。<br>主方法中，我们创建了两个任务为 Blocked 的线程，由于第一个线程首先会获取 Blocked.class 对象的对象锁，然后进入等待状态（不释放锁），所以 <em>GetLock Thread</em> 会在获取锁的状态下，进入等待状态；而 <em>Blocked Thread</em> 则会由于等待 Blocked.class 对象的对象锁而进入 <em>阻塞状态</em>。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文仅是一篇真对 Java 线程的基本介绍，针对 Thread 类源码分析以及常见方法的使用，将在日后的文章中有所介绍。由于初学且行文时间较赶，如果错误多多指教。有相关讨论可以联系 Email：<code>JaydenRansom@outlook.com</code></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java并发/" rel="tag"># Java并发</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/11/14/Java多线程学习（二）/" rel="next" title="Java多线程学习（二）">
+                <i class="fa fa-chevron-left"></i> Java多线程学习（二）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/11/29/Java多线程学习（三）/" rel="prev" title="">
+                 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-中线程的基本状态"><span class="nav-number">1.</span> <span class="nav-text">Java 中线程的基本状态</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Java-线程状态简介"><span class="nav-number">1.1.</span> <span class="nav-text">Java 线程状态简介</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java线程状态实探"><span class="nav-number">2.</span> <span class="nav-text">Java线程状态实探</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#从一个实例谈起"><span class="nav-number">2.1.</span> <span class="nav-text">从一个实例谈起</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#再看示例程序"><span class="nav-number">2.2.</span> <span class="nav-text">再看示例程序</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#TimeWaiting"><span class="nav-number">2.2.1.</span> <span class="nav-text">TimeWaiting</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Waiting"><span class="nav-number">2.2.2.</span> <span class="nav-text">Waiting</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Blocked"><span class="nav-number">2.2.3.</span> <span class="nav-text">Blocked</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
