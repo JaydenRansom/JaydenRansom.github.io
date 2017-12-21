@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Java并发," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="从 CLH 同步队列说起CLH 同步队列节点定义由上篇博文的介绍中，已经了解到了 AQS 的全称是队列同步器。在AQS的内部实现中，依赖其内部持有的队列来完成同步状态的管理。在 JDK 1.8 的源码中对队列节点 Node 的定义如下：（此处为了突出重点和增加可读性，未完全展示源码）123456789101112131415161718192021222324252627282930313233s">
+<meta name="keywords" content="Java并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java多线程学习（五）——AQS深入分析">
+<meta property="og:url" content="https://jaydenransom.github.io/2017/12/19/Java多线程学习（五）——AQS深入分析/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="从 CLH 同步队列说起CLH 同步队列节点定义由上篇博文的介绍中，已经了解到了 AQS 的全称是队列同步器。在AQS的内部实现中，依赖其内部持有的队列来完成同步状态的管理。在 JDK 1.8 的源码中对队列节点 Node 的定义如下：（此处为了突出重点和增加可读性，未完全展示源码）123456789101112131415161718192021222324252627282930313233s">
+<meta property="og:image" content="http://ot4u9yaqn.bkt.clouddn.com/WX20171221-192844.png">
+<meta property="og:image" content="http://ot4u9yaqn.bkt.clouddn.com/WX20171221-192854.png">
+<meta property="og:image" content="http://ot4u9yaqn.bkt.clouddn.com/java_thread.png">
+<meta property="og:updated_time" content="2017-12-21T11:31:28.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java多线程学习（五）——AQS深入分析">
+<meta name="twitter:description" content="从 CLH 同步队列说起CLH 同步队列节点定义由上篇博文的介绍中，已经了解到了 AQS 的全称是队列同步器。在AQS的内部实现中，依赖其内部持有的队列来完成同步状态的管理。在 JDK 1.8 的源码中对队列节点 Node 的定义如下：（此处为了突出重点和增加可读性，未完全展示源码）123456789101112131415161718192021222324252627282930313233s">
+<meta name="twitter:image" content="http://ot4u9yaqn.bkt.clouddn.com/WX20171221-192844.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2017/12/19/Java多线程学习（五）——AQS深入分析/"/>
+
+
+
+
+
+  <title>Java多线程学习（五）——AQS深入分析 | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2017/12/19/Java多线程学习（五）——AQS深入分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Java多线程学习（五）——AQS深入分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-19T16:05:52+08:00">
+                2017-12-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mutithread/" itemprop="url" rel="index">
+                    <span itemprop="name">Java并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="从-CLH-同步队列说起"><a href="#从-CLH-同步队列说起" class="headerlink" title="从 CLH 同步队列说起"></a>从 CLH 同步队列说起</h2><h3 id="CLH-同步队列节点定义"><a href="#CLH-同步队列节点定义" class="headerlink" title="CLH 同步队列节点定义"></a>CLH 同步队列节点定义</h3><p>由上篇博文的介绍中，已经了解到了 AQS 的全称是<em>队列同步器</em>。在AQS的内部实现中，依赖其内部持有的队列来完成同步状态的管理。在 JDK 1.8 的源码中对队列节点 Node 的定义如下：（此处为了突出重点和增加可读性，未完全展示源码）<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">Node</span> </span>&#123;</div><div class="line">        <span class="comment">/** Marker to indicate a node is waiting in shared mode */</span></div><div class="line">        <span class="keyword">static</span> <span class="keyword">final</span> Node SHARED = <span class="keyword">new</span> Node();</div><div class="line">        <span class="comment">/** Marker to indicate a node is waiting in exclusive mode */</span></div><div class="line">        <span class="keyword">static</span> <span class="keyword">final</span> Node EXCLUSIVE = <span class="keyword">null</span>;</div><div class="line"></div><div class="line">        <span class="comment">/** waitStatus value to indicate thread has cancelled */</span></div><div class="line">        <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> CANCELLED =  <span class="number">1</span>;</div><div class="line">        <span class="comment">/** waitStatus value to indicate successor's thread needs unparking */</span></div><div class="line">        <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> SIGNAL    = -<span class="number">1</span>;</div><div class="line">        <span class="comment">/** waitStatus value to indicate thread is waiting on condition */</span></div><div class="line">        <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> CONDITION = -<span class="number">2</span>;</div><div class="line">        <span class="comment">/**</span></div><div class="line">         * waitStatus value to indicate the next acquireShared should</div><div class="line">         * unconditionally propagate</div><div class="line">         */</div><div class="line">        <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> PROPAGATE = -<span class="number">3</span>;</div><div class="line"></div><div class="line"></div><div class="line">        <span class="keyword">volatile</span> <span class="keyword">int</span> waitStatus;</div><div class="line"></div><div class="line">       </div><div class="line">        <span class="keyword">volatile</span> Node prev;</div><div class="line"></div><div class="line">        </div><div class="line">        <span class="keyword">volatile</span> Node next;</div><div class="line"></div><div class="line">        </div><div class="line">        <span class="keyword">volatile</span> Thread thread;</div><div class="line"></div><div class="line">        </div><div class="line">        Node nextWaiter;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>以上代码展示了 JDK1.8 版本中对于队列同步器队列节点 Node 的定义，由以上代码我们可以看出：</p>
+<ol>
+<li>Node 定义的前四行，为同步器的工作方式提供相关支持，工作方式有两种：<code>SHARED</code> 共享模式 和 <code>EXCLUSIVE</code> 独占模式。这两种方法区别如下：<ul>
+<li>独占模式：同一个锁只能被一个线程获取成功，其他线程必须等待</li>
+<li>共享模式：允许多个线程获取同一个锁成功</li>
+</ul>
+</li>
+<li>随后，Node 节点定义了四个常量：<code>CANCELLED</code> 、 <code>SIGNAL</code> 、 <code>CONDITION</code> 、 <code>PROPAGATE</code>。这四个常量为  waitStatus 的可选值，其具体含义分别如下：<ul>
+<li>CANCELLED：取消状态，<em>设置为该状态的节点不会继续参与获取锁的竞争</em>，且为该状态的节点不会转变为其他状态。该状态可能由于超时或者中断造成。</li>
+<li>SIGNAL：<em>后继节点的线程处于等待状态</em>，而当前节点的线程如果释放了同步状态或者被取消，将会通知后继节点，使后继节点的线程得以运行。</li>
+<li>CONDITION：节点在 <code>等待队列</code> 中，<em>节点线程等待在Condition上</em>，当其他线程对Condition调用了signal()后，改节点将会从等待队列中转移到同步队列。</li>
+<li>PROPAGATE：表示下一次共享式同步状态获取将会无条件地传播下去。</li>
+</ul>
+</li>
+<li>Node 节点中还持有对一个 prev 前驱节点和一个 next 后继节点的引用。这两个节点是形成双向队列结构的基础。</li>
+<li>Node 节点中持有的 thread 引用，为入队（构造节点）时的当前线程。</li>
+<li>Node 节点中定义的 nextWaiter，为<em>等待队列中的后继节点</em>。</li>
+</ol>
+<h3 id="同步队列与等待队列"><a href="#同步队列与等待队列" class="headerlink" title="同步队列与等待队列"></a>同步队列与等待队列</h3><ul>
+<li>同步队列：由 AQS 维护。当前线程获取同步状态失败时，AQS会讲当前线程及其状态信息构造成一个Node并加入同步队列。</li>
+<li>等待队列：由 Condition 维护。等待队列主要是维护一个等待singal信号的队列。<br>同步队列与等待队列图解如下：<br>同步队列基本结构：<br><img src="http://ot4u9yaqn.bkt.clouddn.com/WX20171221-192844.png" alt="sync_queue"><br>等待队列基本结构：<br><img src="http://ot4u9yaqn.bkt.clouddn.com/WX20171221-192854.png" alt="wait_queue"><br>有了这两个概念后，我们再看 AQS 中对于 Node 节点的定义，发现节点定义中，持有有三个 Node 节点的饮用，分别为 <code>prev</code> 、 <code>next</code> 以及 <code>nextWaiter</code>。其中，这些节点引用主要分为两类：</li>
+<li>prev 、next 节点：同步队列中的前驱、后继节点</li>
+<li>nextWaiter 节点：等待队列中的后继节点<br>Node 节点的定义中持有这两类节点引用，<em>故可以判定 AQS 维护的等待队列和 Condition 维护的同步队列其实是用的同一 Node 类型</em>。</li>
+</ul>
+<h2 id="同步队列工作原理"><a href="#同步队列工作原理" class="headerlink" title="同步队列工作原理"></a>同步队列工作原理</h2><p>上文中已经通过图解的形式给出了同步队列的基本结构。下面我们在查看过同步器节点定义后，接着继续查看 AQS 源码中的定义。可以看到如上文中结构图所示，AQS中持有两个节点： head 和 tail，分别为同步队列的头节点和尾节点。定义部分源码如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line">    * Head of the wait queue, lazily initialized.  Except for</div><div class="line">    * initialization, it is modified only via method setHead.  Note:</div><div class="line">    * If head exists, its waitStatus is guaranteed not to be</div><div class="line">    * CANCELLED.</div><div class="line">    */</div><div class="line">   <span class="keyword">private</span> <span class="keyword">transient</span> <span class="keyword">volatile</span> Node head;</div><div class="line"></div><div class="line">   <span class="comment">/**</span></div><div class="line">    * Tail of the wait queue, lazily initialized.  Modified only via</div><div class="line">    * method enq to add new wait node.</div><div class="line">    */</div><div class="line">   <span class="keyword">private</span> <span class="keyword">transient</span> <span class="keyword">volatile</span> Node tail;</div></pre></td></tr></table></figure></p>
+<h3 id="同步队列的入队与出队"><a href="#同步队列的入队与出队" class="headerlink" title="同步队列的入队与出队"></a>同步队列的入队与出队</h3><h4 id="入队"><a href="#入队" class="headerlink" title="入队"></a>入队</h4><p>上篇文章中已经介绍到，当一个线程成功获取同步状态时，其他线程因为无法获得该同步状态，将会被构造成节点并加入到同步队列中。同步器中提供了一个基于 CAS 的设置尾节点的方法：compareAndSet(Node expect, Node update)来设置尾节点，这样可以保证线程安全。下面我们来看一下 AQS 入队操作时调用的 addWaiter(Node mode)方法的源码：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line">    * Creates and enqueues node for current thread and given mode.</div><div class="line">    *</div><div class="line">    * <span class="doctag">@param</span> mode Node.EXCLUSIVE for exclusive, Node.SHARED for shared</div><div class="line">    * <span class="doctag">@return</span> the new node</div><div class="line">    */</div><div class="line">   <span class="function"><span class="keyword">private</span> Node <span class="title">addWaiter</span><span class="params">(Node mode)</span> </span>&#123;</div><div class="line">       Node node = <span class="keyword">new</span> Node(Thread.currentThread(), mode);</div><div class="line">       <span class="comment">// Try the fast path of enq; backup to full enq on failure</span></div><div class="line">       Node pred = tail;</div><div class="line">       <span class="keyword">if</span> (pred != <span class="keyword">null</span>) &#123;</div><div class="line">           node.prev = pred;</div><div class="line">           <span class="keyword">if</span> (compareAndSetTail(pred, node)) &#123;</div><div class="line">               pred.next = node;</div><div class="line">               <span class="keyword">return</span> node;</div><div class="line">           &#125;</div><div class="line">       &#125;</div><div class="line">       enq(node);</div><div class="line">       <span class="keyword">return</span> node;</div><div class="line">   &#125;</div></pre></td></tr></table></figure></p>
+<p>根据源码中对addWaiter方法的定义，我们可以看到。该方法首先尝试通过 compareAndSetTail 方法一次尝试设置尾节点，如果成功则直接返回，若不成功则调用enq方法进行尾节点的设置。enq方法的源码如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line">    * Inserts node into queue, initializing if necessary. See picture above.</div><div class="line">    * <span class="doctag">@param</span> node the node to insert</div><div class="line">    * <span class="doctag">@return</span> node's predecessor</div><div class="line">    */</div><div class="line">   <span class="function"><span class="keyword">private</span> Node <span class="title">enq</span><span class="params">(<span class="keyword">final</span> Node node)</span> </span>&#123;</div><div class="line">       <span class="keyword">for</span> (;;) &#123;</div><div class="line">           Node t = tail;</div><div class="line">           <span class="keyword">if</span> (t == <span class="keyword">null</span>) &#123; <span class="comment">// Must initialize</span></div><div class="line">               <span class="keyword">if</span> (compareAndSetHead(<span class="keyword">new</span> Node()))</div><div class="line">                   tail = head;</div><div class="line">           &#125; <span class="keyword">else</span> &#123;</div><div class="line">               node.prev = t;</div><div class="line">               <span class="keyword">if</span> (compareAndSetTail(t, node)) &#123;</div><div class="line">                   t.next = node;</div><div class="line">                   <span class="keyword">return</span> t;</div><div class="line">               &#125;</div><div class="line">           &#125;</div><div class="line">       &#125;</div><div class="line">   &#125;</div></pre></td></tr></table></figure></p>
+<p>由enq方法的定义中，可以看到，其通过死循环的方式来保证尾节点正确被添加，成功添加后，从该方法后返回。<br>由以上整个过程中，我们可以总结向 AQS 同步队列中插入节点的全部过程如下图：<br><img src="http://ot4u9yaqn.bkt.clouddn.com/java_thread.png" alt="sync_queue"></p>
+<h4 id="出队"><a href="#出队" class="headerlink" title="出队"></a>出队</h4><p>同步队列遵循 FIFO，具体出队过程如下：</p>
+<ol>
+<li>首节点线程释放同步状态，唤醒其后继节点</li>
+<li>后继节点尝试获取同步状态，并在获取成功时将自己设置为首节点</li>
+</ol>
+<h3 id="独占式同步状态的获取与释放"><a href="#独占式同步状态的获取与释放" class="headerlink" title="独占式同步状态的获取与释放"></a>独占式同步状态的获取与释放</h3><h4 id="独占式同步状态获取"><a href="#独占式同步状态获取" class="headerlink" title="独占式同步状态获取"></a>独占式同步状态获取</h4><p>独占式同步状态的获取，是从 AQS 的模板方法 <code>acquire(int arg)</code>开始的，我们首先看该方法的定义：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">acquire</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (!tryAcquire(arg) &amp;&amp;</div><div class="line">        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))</div><div class="line">        selfInterrupt();</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>由方法定义中我们可以看到，acquire(int arg)方法的工作流程可以简单叙述如下：</p>
+<ol>
+<li>调用同步器实现的 <code>tryAcquire(int arg)</code> 方法，尝试安全的获取同步状态，若获取成功，方法结束；若获取不成功，转向步骤2；</li>
+<li>获取同步状态不成功时，构造状态为独占的同步节点，并将其加入到同步队列中，同时转向步骤3；</li>
+<li>使该节点进入自旋状态（不断尝试获取同步状态），并在获取到同步状态之前阻塞该线程。<br>步骤 3 中使节点进入自旋状态是通过 <code>acquireQueued(final Node node, int arg)</code> 方法来实现的，该方法的源码如下：<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line">     * Acquires in exclusive uninterruptible mode for thread already in</div><div class="line">     * queue. Used by condition wait methods as well as acquire.</div><div class="line">     *</div><div class="line">     * <span class="doctag">@param</span> node the node</div><div class="line">     * <span class="doctag">@param</span> arg the acquire argument</div><div class="line">     * <span class="doctag">@return</span> &#123;<span class="doctag">@code</span> true&#125; if interrupted while waiting</div><div class="line">     */</div><div class="line">    <span class="function"><span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">acquireQueued</span><span class="params">(<span class="keyword">final</span> Node node, <span class="keyword">int</span> arg)</span> </span>&#123;</div><div class="line">        <span class="keyword">boolean</span> failed = <span class="keyword">true</span>;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            <span class="keyword">boolean</span> interrupted = <span class="keyword">false</span>;</div><div class="line">            <span class="keyword">for</span> (;;) &#123;</div><div class="line">                <span class="keyword">final</span> Node p = node.predecessor();</div><div class="line">                <span class="keyword">if</span> (p == head &amp;&amp; tryAcquire(arg)) &#123;</div><div class="line">                    setHead(node);</div><div class="line">                    p.next = <span class="keyword">null</span>; <span class="comment">// help GC</span></div><div class="line">                    failed = <span class="keyword">false</span>;</div><div class="line">                    <span class="keyword">return</span> interrupted;</div><div class="line">                &#125;</div><div class="line">                <span class="keyword">if</span> (shouldParkAfterFailedAcquire(p, node) &amp;&amp;</div><div class="line">                    parkAndCheckInterrupt())</div><div class="line">                    interrupted = <span class="keyword">true</span>;</div><div class="line">            &#125;</div><div class="line">        &#125; <span class="keyword">finally</span> &#123;</div><div class="line">            <span class="keyword">if</span> (failed)</div><div class="line">                cancelAcquire(node);</div><div class="line">        &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>由源码可知，该函数的功能执行流程如下：</p>
+<ol>
+<li>当前节点进入自旋状态；</li>
+<li>若当前节点的前驱节点为头结点，尝试获取锁，获取锁成功则返回当前中断状态，并推出该函数。</li>
+</ol>
+<h4 id="独占式同步状态释放"><a href="#独占式同步状态释放" class="headerlink" title="独占式同步状态释放"></a>独占式同步状态释放</h4><p>线程获取同步状态并执行完全部对应逻辑后，需要对其持有的同步状态进行释放，这一操作调用了同步器的 <code>release(int arg)</code> 这一模板方法。该方法定义如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">release</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;</div><div class="line">       <span class="keyword">if</span> (tryRelease(arg)) &#123;</div><div class="line">           Node h = head;</div><div class="line">           <span class="keyword">if</span> (h != <span class="keyword">null</span> &amp;&amp; h.waitStatus != <span class="number">0</span>)</div><div class="line">               unparkSuccessor(h);</div><div class="line">           <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">       &#125;</div><div class="line">       <span class="keyword">return</span> <span class="keyword">false</span>;</div><div class="line">   &#125;</div></pre></td></tr></table></figure></p>
+<p>由上述源码，可以总结出该方法的工作流程如下：</p>
+<ol>
+<li>调用同步器实现的 <code>tryRelease(int arg)</code> 方法尝试释放同步状态，若失败，返回 false，方法结束；若成功，转向步骤2。</li>
+<li>唤醒当前节点的后继结点线程，该内容通过 unparkSuccessor 方法实现。</li>
+</ol>
+<h3 id="共享式同步状态的获取与释放"><a href="#共享式同步状态的获取与释放" class="headerlink" title="共享式同步状态的获取与释放"></a>共享式同步状态的获取与释放</h3><h4 id="共享式同步状态获取"><a href="#共享式同步状态获取" class="headerlink" title="共享式同步状态获取"></a>共享式同步状态获取</h4><p>共享式同步状态的获取与释放这一过程中，允许<em>同一时刻有多个线程获取到同步状态</em>。与独占式不同，共享式同步状态的获取是从 AQS 的模板方法 <code>acquireShared(int arg)</code> 进入。acquireShared(int arg) 方法的源码如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">acquireShared</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;</div><div class="line">       <span class="keyword">if</span> (tryAcquireShared(arg) &lt; <span class="number">0</span>)</div><div class="line">           doAcquireShared(arg);</div><div class="line">   &#125;</div></pre></td></tr></table></figure></p>
+<p>可以看到，在 acquireShared(int arg) 方法的实现中，调用同步器自行实现的 tryAcquireShared(arg) 方法进行共享式的获取锁。若该方法返回大于等于 0 的整数，则获取同步状态成功。共享式获取同步状态的过程可以总结如下：</p>
+<ol>
+<li>调用 tryAcquireShared(arg) 方法进行共享式的获取锁，若返回大于等于0的整数，获取成功，结束；若返回小于 0 的整数，获取锁失败，进入步骤2。</li>
+<li>构造共享式同步节点并调用 addWaiter(Node node) 方法将其添加进同步队列，同时节点进入自旋过程，不断尝试获取锁。</li>
+</ol>
+<h4 id="共享式同步状态释放"><a href="#共享式同步状态释放" class="headerlink" title="共享式同步状态释放"></a>共享式同步状态释放</h4><p>共享式同步方法释放，是通过调用 <code>releaseShared(int arg)</code> 这一模板方法实现的。该方法主要的功能也是有两个：释放同步状态、唤醒后续处于等待状态的节点。由于共享式同步状态获取时，可能有多个线程同时获得到了同步状态，所以在释放时，需要保证线程安全的释放同步状态。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本篇中，在简单使用 AQS 实现自定义同步组件的基础上，了解了 AQS 内部的实现源码（主要是获取同步状态、释放同步状态的源码工作流程）。当前对于源码也仅是在简单的流程层面进行了大概的分析，<br>由于初学且行文时间较赶，如果错误还烦请大家多多指教。有相关讨论可以联系 Email：<code>JaydenRansom@outlook.com</code></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java并发/" rel="tag"># Java并发</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/12/Java多线程学习（四）——-队列同步器AQS/" rel="next" title="Java多线程学习（四）—— 队列同步器AQS">
+                <i class="fa fa-chevron-left"></i> Java多线程学习（四）—— 队列同步器AQS
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">11</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#从-CLH-同步队列说起"><span class="nav-number">1.</span> <span class="nav-text">从 CLH 同步队列说起</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CLH-同步队列节点定义"><span class="nav-number">1.1.</span> <span class="nav-text">CLH 同步队列节点定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同步队列与等待队列"><span class="nav-number">1.2.</span> <span class="nav-text">同步队列与等待队列</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#同步队列工作原理"><span class="nav-number">2.</span> <span class="nav-text">同步队列工作原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#同步队列的入队与出队"><span class="nav-number">2.1.</span> <span class="nav-text">同步队列的入队与出队</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#入队"><span class="nav-number">2.1.1.</span> <span class="nav-text">入队</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#出队"><span class="nav-number">2.1.2.</span> <span class="nav-text">出队</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#独占式同步状态的获取与释放"><span class="nav-number">2.2.</span> <span class="nav-text">独占式同步状态的获取与释放</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#独占式同步状态获取"><span class="nav-number">2.2.1.</span> <span class="nav-text">独占式同步状态获取</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#独占式同步状态释放"><span class="nav-number">2.2.2.</span> <span class="nav-text">独占式同步状态释放</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#共享式同步状态的获取与释放"><span class="nav-number">2.3.</span> <span class="nav-text">共享式同步状态的获取与释放</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#共享式同步状态获取"><span class="nav-number">2.3.1.</span> <span class="nav-text">共享式同步状态获取</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#共享式同步状态释放"><span class="nav-number">2.3.2.</span> <span class="nav-text">共享式同步状态释放</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
