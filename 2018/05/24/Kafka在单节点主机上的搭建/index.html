@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="大数据, 消息队列," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="Kafka 简介Kafka 作为一个高吞吐量的分布式发布订阅消息系统，目前广泛的作为消息中间件被使用在互联网各大业务领域。最近由于在学习日志分析相关的技术，故需要 Kafka 作为日志信息中间件，在此记录单节点示例 Kafka 搭建流程。 环境介绍本示例所基于的操作系统版本是 Centos 6.8。Kafka 版本为 1.1.0。该版本是在 Kafka 官方消除四位版本号之后的目前最新版本。由于">
+<meta name="keywords" content="大数据, 消息队列">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka在单节点主机上的搭建">
+<meta property="og:url" content="https://jaydenransom.github.io/2018/05/24/Kafka在单节点主机上的搭建/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="Kafka 简介Kafka 作为一个高吞吐量的分布式发布订阅消息系统，目前广泛的作为消息中间件被使用在互联网各大业务领域。最近由于在学习日志分析相关的技术，故需要 Kafka 作为日志信息中间件，在此记录单节点示例 Kafka 搭建流程。 环境介绍本示例所基于的操作系统版本是 Centos 6.8。Kafka 版本为 1.1.0。该版本是在 Kafka 官方消除四位版本号之后的目前最新版本。由于">
+<meta property="og:updated_time" content="2018-05-24T11:40:38.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kafka在单节点主机上的搭建">
+<meta name="twitter:description" content="Kafka 简介Kafka 作为一个高吞吐量的分布式发布订阅消息系统，目前广泛的作为消息中间件被使用在互联网各大业务领域。最近由于在学习日志分析相关的技术，故需要 Kafka 作为日志信息中间件，在此记录单节点示例 Kafka 搭建流程。 环境介绍本示例所基于的操作系统版本是 Centos 6.8。Kafka 版本为 1.1.0。该版本是在 Kafka 官方消除四位版本号之后的目前最新版本。由于">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2018/05/24/Kafka在单节点主机上的搭建/"/>
+
+
+
+
+
+  <title>Kafka在单节点主机上的搭建 | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2018/05/24/Kafka在单节点主机上的搭建/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Kafka在单节点主机上的搭建</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-05-24T18:46:29+08:00">
+                2018-05-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/大数据/" itemprop="url" rel="index">
+                    <span itemprop="name">大数据</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="Kafka-简介"><a href="#Kafka-简介" class="headerlink" title="Kafka 简介"></a>Kafka 简介</h2><p>Kafka 作为一个高吞吐量的分布式发布订阅消息系统，目前广泛的作为消息中间件被使用在互联网各大业务领域。最近由于在学习日志分析相关的技术，故需要 Kafka 作为日志信息中间件，在此记录单节点示例 Kafka 搭建流程。</p>
+<h2 id="环境介绍"><a href="#环境介绍" class="headerlink" title="环境介绍"></a>环境介绍</h2><p>本示例所基于的操作系统版本是 Centos 6.8。Kafka 版本为 1.1.0。该版本是在 Kafka 官方消除四位版本号之后的目前最新版本。<br>由于 Kafka 通过依赖 zookeeper 来进行维护和协调 broker，所以在安装 kafka 时需要安装 zookeeper。本例采用 zookeeper 3.4.10 版本。<br>本例中 zookeeper 和 kafka 均存在于系统的 /usr/local 目录下，该目录可以根据实际需求自行更改。</p>
+<h2 id="zookeeper-安装"><a href="#zookeeper-安装" class="headerlink" title="zookeeper 安装"></a>zookeeper 安装</h2><p>zookeeper 使用 wget 进行下载。北京理工大学 zookeeper 3.4.10 版本<a href="http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.10/" target="_blank" rel="external">复制此链接</a>。</p>
+<h3 id="复制到指定目录并解压"><a href="#复制到指定目录并解压" class="headerlink" title="复制到指定目录并解压"></a>复制到指定目录并解压</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">cp zookeeper-3.4.10.tar.gz /usr/local</div><div class="line">tar -zxvf zookeeper-3.4.10.tar.gz</div></pre></td></tr></table></figure>
+<h3 id="增加-zk-路径到环境变量"><a href="#增加-zk-路径到环境变量" class="headerlink" title="增加 zk 路径到环境变量"></a>增加 zk 路径到环境变量</h3><p>编辑 /etc/profile 文件，增加 zookeeper 变量，具体如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">vi /etc/profile</div></pre></td></tr></table></figure></p>
+<p>增加<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"># 注，此处按照自己实际 zookeeper 存储位置进行定义</div><div class="line"></div><div class="line">export ZOOKEEPER_INSTALL=/usr/local/zookeeper-3.4.10</div><div class="line">export PATH=$PATH:$ZOOKEEPER_INSTALL/bin</div></pre></td></tr></table></figure></p>
+<p>使修改内容生效<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">source /etc/profile</div></pre></td></tr></table></figure></p>
+<h3 id="根据-template-创建-zoo-cfg"><a href="#根据-template-创建-zoo-cfg" class="headerlink" title="根据 template 创建 zoo.cfg"></a>根据 template 创建 zoo.cfg</h3><p>在 zookeeper 根目录进入 conf 文件夹，并复制 zoo.cfg<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">cd conf</div><div class="line">cp zoo_sample.cfg zoo.cfg</div></pre></td></tr></table></figure></p>
+<p>zoo.cfg 将作为启动 zookeeper 时的配置文件</p>
+<h3 id="启动-zookeeper-服务"><a href="#启动-zookeeper-服务" class="headerlink" title="启动 zookeeper 服务"></a>启动 zookeeper 服务</h3><p>在 zookeeper 根目录进入 bin 文件夹，启动<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">cd bin</div><div class="line">./zkServer.sh start</div></pre></td></tr></table></figure></p>
+<p>即可启动</p>
+<h2 id="kafka-安装"><a href="#kafka-安装" class="headerlink" title="kafka 安装"></a>kafka 安装</h2><p>kafka 使用 wget 进行下载。北京理工大学镜像地址 kafka_2.11-1.1.0 版本 <a href="http://mirror.bit.edu.cn/apache/kafka/1.1.0/kafka_2.11-1.1.0.tgz" target="_blank" rel="external">复制此链接</a>。</p>
+<h3 id="解压并移动到文件夹"><a href="#解压并移动到文件夹" class="headerlink" title="解压并移动到文件夹"></a>解压并移动到文件夹</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">cp kafka_2.11-1.1.0.tgz /usr/local</div><div class="line">tar -zxvf kafka_2.11-1.1.0.tgz</div></pre></td></tr></table></figure>
+<h3 id="启动-kafka"><a href="#启动-kafka" class="headerlink" title="启动 kafka"></a>启动 kafka</h3><p>首先确定 zookeeper 已经成功启动并运行在 2181 端口<br>在 kafka 根目录 进入 bin 文件夹，启动<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">cd bin</div><div class="line">./kafka-server-start.sh ../config/server.properties</div><div class="line"></div><div class="line">#启动时可以通过添加 -daemon 来使该进程以守护进程形式运行</div></pre></td></tr></table></figure></p>
+<p>启动后可以通过<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ps -ef | grep kafka</div></pre></td></tr></table></figure></p>
+<p>可通过该命令查看进程运行状况，判断 kafka 是否启动成功</p>
+<h3 id="kafka-简单示例使用"><a href="#kafka-简单示例使用" class="headerlink" title="kafka 简单示例使用"></a>kafka 简单示例使用</h3><p>kafka 以 topic 为基础单位，我们可以通过 bin 下的脚本来进行 topic 创建。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">cd bin</div><div class="line">./kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test</div></pre></td></tr></table></figure></p>
+<p>test 为测试的 topic 名，根据实际需求可以进行更换</p>
+<p>创建完成后可以同样通过该脚本查看当前已创建的topic<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">./kafka-topics.sh --list --zookeeper localhost:2181</div></pre></td></tr></table></figure></p>
+<p>创建生产者，向 topic 里写数据<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">./kafka-console-producer.sh --broker-list localhost:9092 --topic test</div></pre></td></tr></table></figure></p>
+<p>该命令输入后可输入写入的数据</p>
+<p>创建消费者，消费数据<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning</div></pre></td></tr></table></figure></p>
+<p>消费者可以看到生产者生产的数据，测试成功</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>本例展示了单节点 kafka 的一个搭建示例，通过修改配置文件，可以实现 kafka 的多节点部署。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/大数据-消息队列/" rel="tag"># 大数据, 消息队列</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/04/21/Java-String类深入理解/" rel="next" title="Java String类深入理解">
+                <i class="fa fa-chevron-left"></i> Java String类深入理解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/05/24/Kafka在单节点主机上的搭建/" rel="prev" title="">
+                 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Kafka-简介"><span class="nav-number">1.</span> <span class="nav-text">Kafka 简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#环境介绍"><span class="nav-number">2.</span> <span class="nav-text">环境介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#zookeeper-安装"><span class="nav-number">3.</span> <span class="nav-text">zookeeper 安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#复制到指定目录并解压"><span class="nav-number">3.1.</span> <span class="nav-text">复制到指定目录并解压</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#增加-zk-路径到环境变量"><span class="nav-number">3.2.</span> <span class="nav-text">增加 zk 路径到环境变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#根据-template-创建-zoo-cfg"><span class="nav-number">3.3.</span> <span class="nav-text">根据 template 创建 zoo.cfg</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#启动-zookeeper-服务"><span class="nav-number">3.4.</span> <span class="nav-text">启动 zookeeper 服务</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kafka-安装"><span class="nav-number">4.</span> <span class="nav-text">kafka 安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#解压并移动到文件夹"><span class="nav-number">4.1.</span> <span class="nav-text">解压并移动到文件夹</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#启动-kafka"><span class="nav-number">4.2.</span> <span class="nav-text">启动 kafka</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#kafka-简单示例使用"><span class="nav-number">4.3.</span> <span class="nav-text">kafka 简单示例使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

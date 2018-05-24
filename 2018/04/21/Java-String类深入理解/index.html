@@ -93,17 +93,17 @@
 
 
 
-<meta name="description" content="JMM（Java Memory Model）简介Java作为一种服务器端开发的强大语言，其多线程编程在实际开发中有着广泛的应用，提到Java多线程编程，要想保证项目在实际应用中满足线程安全，就要了解Java内存模型，懂得其原理，进行辅助开发。众所周知，不同硬件以及不同操作系统的内存访问是由差异的。与C/C++这种直接使用物理硬件和操作系统的内存模型的语言不同，Java作为一种跨平台的编程语言，Ja">
+<meta name="description" content="String 类的三大特性在 Java 开发中，String 类并不陌生。作为日常开发的最常用工具类之一，Java 在其的实现上，也进行了很多优化。String 类底层是一个char数组，在类定义中声明如下：1private final char value[]; value 数组便是实际的字符载体。相比于其他类，String 类有三个基本特点：  不变性：String 对象一旦生成，则不能对它进">
 <meta name="keywords" content="Java基础">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Java内存模型初探">
-<meta property="og:url" content="https://jaydenransom.github.io/2017/11/08/Java内存模型初探/index.html">
+<meta property="og:title" content="Java String类深入理解">
+<meta property="og:url" content="https://jaydenransom.github.io/2018/04/21/Java-String类深入理解/index.html">
 <meta property="og:site_name" content="JaydenRansom&#39;s Blog">
-<meta property="og:description" content="JMM（Java Memory Model）简介Java作为一种服务器端开发的强大语言，其多线程编程在实际开发中有着广泛的应用，提到Java多线程编程，要想保证项目在实际应用中满足线程安全，就要了解Java内存模型，懂得其原理，进行辅助开发。众所周知，不同硬件以及不同操作系统的内存访问是由差异的。与C/C++这种直接使用物理硬件和操作系统的内存模型的语言不同，Java作为一种跨平台的编程语言，Ja">
-<meta property="og:updated_time" content="2017-11-08T14:56:35.000Z">
+<meta property="og:description" content="String 类的三大特性在 Java 开发中，String 类并不陌生。作为日常开发的最常用工具类之一，Java 在其的实现上，也进行了很多优化。String 类底层是一个char数组，在类定义中声明如下：1private final char value[]; value 数组便是实际的字符载体。相比于其他类，String 类有三个基本特点：  不变性：String 对象一旦生成，则不能对它进">
+<meta property="og:updated_time" content="2018-04-21T11:33:07.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Java内存模型初探">
-<meta name="twitter:description" content="JMM（Java Memory Model）简介Java作为一种服务器端开发的强大语言，其多线程编程在实际开发中有着广泛的应用，提到Java多线程编程，要想保证项目在实际应用中满足线程安全，就要了解Java内存模型，懂得其原理，进行辅助开发。众所周知，不同硬件以及不同操作系统的内存访问是由差异的。与C/C++这种直接使用物理硬件和操作系统的内存模型的语言不同，Java作为一种跨平台的编程语言，Ja">
+<meta name="twitter:title" content="Java String类深入理解">
+<meta name="twitter:description" content="String 类的三大特性在 Java 开发中，String 类并不陌生。作为日常开发的最常用工具类之一，Java 在其的实现上，也进行了很多优化。String 类底层是一个char数组，在类定义中声明如下：1private final char value[]; value 数组便是实际的字符载体。相比于其他类，String 类有三个基本特点：  不变性：String 对象一旦生成，则不能对它进">
 
 
 
@@ -131,13 +131,13 @@
 
 
 
-  <link rel="canonical" href="https://jaydenransom.github.io/2017/11/08/Java内存模型初探/"/>
+  <link rel="canonical" href="https://jaydenransom.github.io/2018/04/21/Java-String类深入理解/"/>
 
 
 
 
 
-  <title>Java内存模型初探 | JaydenRansom's Blog</title>
+  <title>Java String类深入理解 | JaydenRansom's Blog</title>
   
 
 
@@ -276,7 +276,7 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2017/11/08/Java内存模型初探/">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2018/04/21/Java-String类深入理解/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Jayden Ransom">
@@ -293,7 +293,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Java内存模型初探</h1>
+          <h1 class="post-title" itemprop="name headline">Java String类深入理解</h1>
         
 
         <div class="post-meta">
@@ -305,8 +305,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-08T22:54:09+08:00">
-                2017-11-08
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-21T12:55:13+08:00">
+                2018-04-21
               </time>
             
 
@@ -362,35 +362,32 @@
       
 
       
-        <h2 id="JMM（Java-Memory-Model）简介"><a href="#JMM（Java-Memory-Model）简介" class="headerlink" title="JMM（Java Memory Model）简介"></a>JMM（Java Memory Model）简介</h2><p>Java作为一种服务器端开发的强大语言，其多线程编程在实际开发中有着广泛的应用，提到Java多线程编程，要想保证项目在实际应用中满足线程安全，就要了解Java内存模型，懂得其原理，进行辅助开发。<br>众所周知，不同硬件以及不同操作系统的内存访问是由差异的。与C/C++这种直接使用物理硬件和操作系统的内存模型的语言不同，Java作为一种跨平台的编程语言，Java内存模型便是在Java虚拟机规范中定义的一种屏蔽掉不同硬件及不同操作系统的内存访问差异的机制。<br>据《深入理解Java虚拟机》一书中的表述，Java内存模型在JDK 1.5发布后已经成熟和完善起来了。</p>
-<h2 id="JMM初探"><a href="#JMM初探" class="headerlink" title="JMM初探"></a>JMM初探</h2><h3 id="Java内存的划分与规定"><a href="#Java内存的划分与规定" class="headerlink" title="Java内存的划分与规定"></a>Java内存的划分与规定</h3><p>JMM中，主要将内存划分为两部分：主内存和工作内存。</p>
+        <h2 id="String-类的三大特性"><a href="#String-类的三大特性" class="headerlink" title="String 类的三大特性"></a>String 类的三大特性</h2><p>在 Java 开发中，String 类并不陌生。作为日常开发的最常用工具类之一，Java 在其的实现上，也进行了很多优化。<br>String 类底层是一个char数组，在类定义中声明如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">char</span> value[];</div></pre></td></tr></table></figure></p>
+<p>value 数组便是实际的字符载体。<br>相比于其他类，String 类有三个基本特点：</p>
 <ul>
-<li>主内存（线程共享）：存储所有变量（包括<strong>实例字段</strong>、<strong>静态字段</strong>以及<strong>构成数组对象的元素</strong>，不包括 <code>局部变量</code> 和 <code>方法参数</code>）</li>
-<li>工作内存（线程私有）：存储被该线程使用到的变量的主内存副本拷贝<br>在线程工作中，其所有对变量的操作均是在工作内存中完成的，线程<strong>不能直接读写主内存中的变量</strong>，工作内存中的信息会定时同步回主内存。</li>
+<li>不变性：String 对象一旦生成，则不能对它进行改变；这个特点使得其在被多线程共享时，可以省略同步和锁等待的过程，提高性能</li>
+<li>针对常量池优化：拥有相同<em>值</em>的字符串引用常量池中的同一个<em>拷贝</em>，对于频繁出现的字符串，能够节省内存空间</li>
+<li>类的 final 定义：由于 String 被约定成 immutable （不可变）的，所以声明成 final 可以防止开发者继承 String，实现 mutable （可变）的子类</li>
 </ul>
-<h3 id="工作内存与主内存的交互"><a href="#工作内存与主内存的交互" class="headerlink" title="工作内存与主内存的交互"></a>工作内存与主内存的交互</h3><p>Java内存模型中定义了八种 <code>原子操作</code> 用来进行主内存与工作内存的交互。下面将简单介绍这八种操作，主要包括其作用的对象，以及用途。具体内容还请详见《深入理解Java虚拟机》。这八种操作如下：</p>
+<p>以上就是 String 类的三大特性，这三大特性也就成了 String 类的设计与实现基础。</p>
+<h2 id="String-对象的基本使用与比较"><a href="#String-对象的基本使用与比较" class="headerlink" title="String 对象的基本使用与比较"></a>String 对象的基本使用与比较</h2><h3 id="String-对象的创建"><a href="#String-对象的创建" class="headerlink" title="String 对象的创建"></a>String 对象的创建</h3><p>一个 String 对象的创建过程如下：</p>
+<ol>
+<li>Java Runtime 在创建一个 String 对象时，会在 String 常量池中查找是否存在<em>值</em>相同的字符串对象。如果存在，则根据下面 2 或 3 过程进行执行；若不存在，则会在池中创建一个字符串</li>
+<li>针对 <code>使用 new 关键字</code>  或 <code>包含变量的表达式</code> 创建 String对象：在 Java Heap<sup>[1]</sup> 中创建一个 String 对象</li>
+<li>针对非使用 new 关键字创建 String对象：执行完 1 过程后，无后续 Java Heap 区的创建过程</li>
+</ol>
+<h3 id="String-intern-方法"><a href="#String-intern-方法" class="headerlink" title="String.intern() 方法"></a>String.intern() 方法</h3><p>String.intern() 方法是一个 native 方法，其在 String 类定义中声明如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">native</span> String <span class="title">intern</span><span class="params">()</span></span>;</div></pre></td></tr></table></figure></p>
+<p>String.intern() 方法的作用是保证每个通过此方法实例的字符串都是常量池中的引用，其具体的优点有两条：</p>
+<ol>
+<li>由于字符串常量池中的字符串都是唯一的，所以全部使用 intern() 方法获取字符串会节省内存</li>
+<li>通过 intern() 方法获取到的字符串可以使用 <code>==</code> 替代 <code>equals()</code> 进行比较，速度较快<br>同时，由于 JVM 运行时内存分区的问题，使用 intern() 方法也会出现一些问题。<br>了解过 JVM 运行时结构的都应该知道，</li>
+</ol>
 <ul>
-<li>lock：该操作作用于 <code>主内存</code> 中的变量，作用是把一个变量标识为一条线程独占的状态</li>
-<li>unlock：该操作作用于 <code>主内存</code> 中的变量，它将被独占锁定的变量释放，使其可以被其它线程锁定</li>
-<li><strong>read</strong>：该操作作用于 <code>主内存</code> 中的变量，作用是<strong>将一个变量的值从主内存传输到线程的工作内存中，供load操作使用</strong></li>
-<li><strong>load</strong>：该操作作用于 <code>工作内存</code> 中的变量，作用是<strong>将read操作从主内存中得到的变量值放入工作内存的变量副本中</strong></li>
-<li>use：该操作作用于 <code>工作内存</code> 中的变量，作用是将工作内存中一个变量的值传递给执行引擎</li>
-<li>assign：该操作作用于 <code>工作内存</code> 中的变量，作用是把一个从执行引擎接收到的值赋给工作内存中的一个变量</li>
-<li><strong>store</strong>：该操作作用于 <code>工作内存</code> 中的变量，作用是<strong>将一个变量的值从工作内存传输到主内存中，供write操作使用</strong></li>
-<li><strong>write</strong>：该操作作用于 <code>主内存</code> 中的变量，作用是<strong>将store操作从工作内存中得到的变量值放入主内存的变量中</strong></li>
+<li>JDK 1.6 及以下：字符串常量池位于 Java Heap 的 PermGen(永久代) 区域，该区域是整个 JVM 实例共享的区域，如果使用 intern() 过多，会出现 OutOfMemoryError。</li>
+<li>JDK 1.7 及 1.8<br>下面一个例子可以看出通过不同方式创建 String 对象的比较<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"></div></pre></td></tr></table></figure>
+</li>
 </ul>
-<p>由以上八个操作列举可以看出，<code>lock、unlock</code>为一组，作用为对主内存的变量进行加锁解锁；<code>use、assign</code>为一组，作用为执行引擎与工作内存的读取、写入操作；而<code>read、load、store、write</code>这四个操作则是供主线程与工作线程进行数据的同步所用。<br>在Java内存模型的规定中，还规定了以上八种操作在进行基本操作时必须满足的基本规则，这些规则与八种基本操作共同构成了JMM的核心。对于具体的规则在《深入理解Java虚拟机》一书里已经有了很详细的讲解，在此不再赘述。</p>
-<h2 id="JMM的特性"><a href="#JMM的特性" class="headerlink" title="JMM的特性"></a>JMM的特性</h2><p>Java内存模型（Java Memory Model）主要有三个特性：原子性、可见性与有序性。</p>
-<h3 id="原子性"><a href="#原子性" class="headerlink" title="原子性"></a>原子性</h3><p>上文介绍的八种操作均为原子操作，其在最基本层次保证了基本数据类型读写的原子性。同时，学习过Java语言的应该对 <code>synchronized</code> 这个关键字也不会陌生，对于被synchronized修饰的块内，操作也可以认为是原子的。这就保证了非基本数据类型的操作的原子性。（关于synchronized的实现原理，将在单独文章中进行介绍）</p>
-<h3 id="可见性"><a href="#可见性" class="headerlink" title="可见性"></a>可见性</h3><p>在上文的八种操作介绍中，我们知道，若想让两个线程共享变量，则需要在一个线程更新该变量后，将该变量同步回主内存，然后另一个线程在读取时，首先从主内存中获取进行更新，然后读取。这就保证了线程间的可见性。</p>
-<h4 id="volatile、final、synchronized实现可见性"><a href="#volatile、final、synchronized实现可见性" class="headerlink" title="volatile、final、synchronized实现可见性"></a>volatile、final、synchronized实现可见性</h4><ul>
-<li>Java中的 <code>volatile</code> 关键字的特殊规则保证了<strong>新值能够立刻同步到主内存</strong>，以及<strong>每次使用前都从主内存刷新</strong>，这便保证了多线程操作时变量的可见性</li>
-<li>由于JMM规定，在对一个变量执行unlock之前，必须将该变量同步回主内存，所以在synchronized的使用结束后，便可以保证主内存中的变量已经被更新，这也就保证了可见性</li>
-<li>final修饰的对象，由于其在类加载完成过后一旦初始化完成，便可以被访问，故也可保证可见性</li>
-</ul>
-<h3 id="有序性"><a href="#有序性" class="headerlink" title="有序性"></a>有序性</h3><p>Java语言中，volatile关键字的其中一个语义便是禁止指令重排序，故可以保证有序性；synchronized关键字则通过其对象锁控制，控制同一时刻一个对象的对象锁只能被一个线程获取，来保证串行，保证有序。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文算是博主个人的一个读书笔记，初读第一遍这部分的时候觉得晦涩难懂，在处理过一些多线程场景之后，再回来阅读该部分，对JMM便有了一些初步的理解。JMM主要围绕着一组定义而展开，这些定义便是帮助我们判断线程安全的基础，有了这些知识基础，才能够更好的处理多线程环境下的编程。</p>
-
+<h2 id="操纵-String-对象"><a href="#操纵-String-对象" class="headerlink" title="操纵 String 对象"></a>操纵 String 对象</h2><h3 id="字符串截取-substring"><a href="#字符串截取-substring" class="headerlink" title="字符串截取 substring()"></a>字符串截取 substring()</h3><h2 id="StringBuilder-与-StringBuffer"><a href="#StringBuilder-与-StringBuffer" class="headerlink" title="StringBuilder 与 StringBuffer"></a>StringBuilder 与 StringBuffer</h2><h3 id="StringBuilder"><a href="#StringBuilder" class="headerlink" title="StringBuilder"></a>StringBuilder</h3><h3 id="StringBuffer"><a href="#StringBuffer" class="headerlink" title="StringBuffer"></a>StringBuffer</h3>
       
     </div>
 
@@ -432,8 +429,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/11/08/Java与代理——cglib基本使用/" rel="next" title="Java与代理——cglib基本使用">
-                <i class="fa fa-chevron-left"></i> Java与代理——cglib基本使用
+              <a href="/2018/03/27/Elasticsearch学习——了解Lucene（二）/" rel="next" title="Elasticsearch学习——了解Lucene（二）">
+                <i class="fa fa-chevron-left"></i> Elasticsearch学习——了解Lucene（二）
               </a>
             
           </div>
@@ -442,8 +439,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2017/11/13/Java多线程学习（一）/" rel="prev" title="Java多线程学习（一）">
-                Java多线程学习（一） <i class="fa fa-chevron-right"></i>
+              <a href="/2018/05/24/Kafka在单节点主机上的搭建/" rel="prev" title="Kafka在单节点主机上的搭建">
+                Kafka在单节点主机上的搭建 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -574,7 +571,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#JMM（Java-Memory-Model）简介"><span class="nav-number">1.</span> <span class="nav-text">JMM（Java Memory Model）简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JMM初探"><span class="nav-number">2.</span> <span class="nav-text">JMM初探</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Java内存的划分与规定"><span class="nav-number">2.1.</span> <span class="nav-text">Java内存的划分与规定</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#工作内存与主内存的交互"><span class="nav-number">2.2.</span> <span class="nav-text">工作内存与主内存的交互</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JMM的特性"><span class="nav-number">3.</span> <span class="nav-text">JMM的特性</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#原子性"><span class="nav-number">3.1.</span> <span class="nav-text">原子性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可见性"><span class="nav-number">3.2.</span> <span class="nav-text">可见性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile、final、synchronized实现可见性"><span class="nav-number">3.2.1.</span> <span class="nav-text">volatile、final、synchronized实现可见性</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#有序性"><span class="nav-number">3.3.</span> <span class="nav-text">有序性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#String-类的三大特性"><span class="nav-number">1.</span> <span class="nav-text">String 类的三大特性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#String-对象的基本使用与比较"><span class="nav-number">2.</span> <span class="nav-text">String 对象的基本使用与比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#String-对象的创建"><span class="nav-number">2.1.</span> <span class="nav-text">String 对象的创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#String-intern-方法"><span class="nav-number">2.2.</span> <span class="nav-text">String.intern() 方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#操纵-String-对象"><span class="nav-number">3.</span> <span class="nav-text">操纵 String 对象</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#字符串截取-substring"><span class="nav-number">3.1.</span> <span class="nav-text">字符串截取 substring()</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#StringBuilder-与-StringBuffer"><span class="nav-number">4.</span> <span class="nav-text">StringBuilder 与 StringBuffer</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#StringBuilder"><span class="nav-number">4.1.</span> <span class="nav-text">StringBuilder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#StringBuffer"><span class="nav-number">4.2.</span> <span class="nav-text">StringBuffer</span></a></li></ol></li></ol></div>
             
 
           </div>
