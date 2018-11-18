@@ -77,7 +77,7 @@
 <link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Java基础," />
+  <meta name="keywords" content="elasticsearch," />
 
 
 
@@ -93,17 +93,17 @@
 
 
 
-<meta name="description" content="String 类的三大特性在 Java 开发中，String 类并不陌生。作为日常开发的最常用工具类之一，Java 在其的实现上，也进行了很多优化。String 类底层是一个char数组，在类定义中声明如下：1private final char value[]; value 数组便是实际的字符载体。相比于其他类，String 类有三个基本特点：  不变性：String 对象一旦生成，则不能对它进">
-<meta name="keywords" content="Java基础">
+<meta name="description" content="ElasticSearch 索引分片在 es 的概念中，最重要的一个概念便是索引。索引是真实数据的载体，对索引的管理如果不慎重，则会带来很多的性能问题。 用过es的小伙伴都应该了解，我们应该在创建索引的时候为索引创建分片数，并且一个索引的分片数一经指定后就不能再修改（相比，副本数可以通过命令随时更改）。 在通常情况下，我们都会通过预判数据量级和 过度分配 这一策略来避免因数据量过大或QPS增长带来">
+<meta name="keywords" content="elasticsearch">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Java String类深入理解">
-<meta property="og:url" content="https://jaydenransom.github.io/2018/04/21/Java-String类深入理解/index.html">
+<meta property="og:title" content="Elasticsearch 自定义分片分配">
+<meta property="og:url" content="https://jaydenransom.github.io/2018/11/18/Elasticsearch-自定义分片分配/index.html">
 <meta property="og:site_name" content="JaydenRansom&#39;s Blog">
-<meta property="og:description" content="String 类的三大特性在 Java 开发中，String 类并不陌生。作为日常开发的最常用工具类之一，Java 在其的实现上，也进行了很多优化。String 类底层是一个char数组，在类定义中声明如下：1private final char value[]; value 数组便是实际的字符载体。相比于其他类，String 类有三个基本特点：  不变性：String 对象一旦生成，则不能对它进">
-<meta property="og:updated_time" content="2018-04-21T11:33:07.000Z">
+<meta property="og:description" content="ElasticSearch 索引分片在 es 的概念中，最重要的一个概念便是索引。索引是真实数据的载体，对索引的管理如果不慎重，则会带来很多的性能问题。 用过es的小伙伴都应该了解，我们应该在创建索引的时候为索引创建分片数，并且一个索引的分片数一经指定后就不能再修改（相比，副本数可以通过命令随时更改）。 在通常情况下，我们都会通过预判数据量级和 过度分配 这一策略来避免因数据量过大或QPS增长带来">
+<meta property="og:updated_time" content="2018-11-18T06:09:13.864Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Java String类深入理解">
-<meta name="twitter:description" content="String 类的三大特性在 Java 开发中，String 类并不陌生。作为日常开发的最常用工具类之一，Java 在其的实现上，也进行了很多优化。String 类底层是一个char数组，在类定义中声明如下：1private final char value[]; value 数组便是实际的字符载体。相比于其他类，String 类有三个基本特点：  不变性：String 对象一旦生成，则不能对它进">
+<meta name="twitter:title" content="Elasticsearch 自定义分片分配">
+<meta name="twitter:description" content="ElasticSearch 索引分片在 es 的概念中，最重要的一个概念便是索引。索引是真实数据的载体，对索引的管理如果不慎重，则会带来很多的性能问题。 用过es的小伙伴都应该了解，我们应该在创建索引的时候为索引创建分片数，并且一个索引的分片数一经指定后就不能再修改（相比，副本数可以通过命令随时更改）。 在通常情况下，我们都会通过预判数据量级和 过度分配 这一策略来避免因数据量过大或QPS增长带来">
 
 
 
@@ -131,13 +131,13 @@
 
 
 
-  <link rel="canonical" href="https://jaydenransom.github.io/2018/04/21/Java-String类深入理解/"/>
+  <link rel="canonical" href="https://jaydenransom.github.io/2018/11/18/Elasticsearch-自定义分片分配/"/>
 
 
 
 
 
-  <title>Java String类深入理解 | JaydenRansom's Blog</title>
+  <title>Elasticsearch 自定义分片分配 | JaydenRansom's Blog</title>
   
 
 
@@ -276,7 +276,7 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2018/04/21/Java-String类深入理解/">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2018/11/18/Elasticsearch-自定义分片分配/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Jayden Ransom">
@@ -293,7 +293,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Java String类深入理解</h1>
+          <h1 class="post-title" itemprop="name headline">Elasticsearch 自定义分片分配</h1>
         
 
         <div class="post-meta">
@@ -305,8 +305,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-21T12:55:13+08:00">
-                2018-04-21
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-18T12:59:31+08:00">
+                2018-11-18
               </time>
             
 
@@ -328,8 +328,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java基础/" itemprop="url" rel="index">
-                    <span itemprop="name">Java基础</span>
+                  <a href="/categories/elasticsearch/" itemprop="url" rel="index">
+                    <span itemprop="name">elasticsearch</span>
                   </a>
                 </span>
 
@@ -362,32 +362,35 @@
       
 
       
-        <h2 id="String-类的三大特性"><a href="#String-类的三大特性" class="headerlink" title="String 类的三大特性"></a>String 类的三大特性</h2><p>在 Java 开发中，String 类并不陌生。作为日常开发的最常用工具类之一，Java 在其的实现上，也进行了很多优化。<br>String 类底层是一个char数组，在类定义中声明如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">char</span> value[];</div></pre></td></tr></table></figure></p>
-<p>value 数组便是实际的字符载体。<br>相比于其他类，String 类有三个基本特点：</p>
-<ul>
-<li>不变性：String 对象一旦生成，则不能对它进行改变；这个特点使得其在被多线程共享时，可以省略同步和锁等待的过程，提高性能</li>
-<li>针对常量池优化：拥有相同<em>值</em>的字符串引用常量池中的同一个<em>拷贝</em>，对于频繁出现的字符串，能够节省内存空间</li>
-<li>类的 final 定义：由于 String 被约定成 immutable （不可变）的，所以声明成 final 可以防止开发者继承 String，实现 mutable （可变）的子类</li>
-</ul>
-<p>以上就是 String 类的三大特性，这三大特性也就成了 String 类的设计与实现基础。</p>
-<h2 id="String-对象的基本使用与比较"><a href="#String-对象的基本使用与比较" class="headerlink" title="String 对象的基本使用与比较"></a>String 对象的基本使用与比较</h2><h3 id="String-对象的创建"><a href="#String-对象的创建" class="headerlink" title="String 对象的创建"></a>String 对象的创建</h3><p>一个 String 对象的创建过程如下：</p>
+        <h2 id="ElasticSearch-索引分片"><a href="#ElasticSearch-索引分片" class="headerlink" title="ElasticSearch 索引分片"></a>ElasticSearch 索引分片</h2><p>在 es 的概念中，最重要的一个概念便是索引。索引是真实数据的载体，对索引的管理如果不慎重，则会带来很多的性能问题。</p>
+<p>用过es的小伙伴都应该了解，我们应该在创建索引的时候为索引创建分片数，并且一个索引的分片数一经指定后就不能再修改（相比，副本数可以通过命令随时更改）。</p>
+<p>在通常情况下，我们都会通过预判数据量级和 <strong>过度分配</strong> 这一策略来避免因数据量过大或QPS增长带来的必须需要迁移索引的场景。</p>
+<p>关于具体分片和过度分配以及相关分配策略的介绍，请移步 <a href="https://wizardforcel.gitbooks.io/mastering-elasticsearch/content/chapter-4/41_README.html" target="_blank" rel="external">选择恰当的分片数量和分片副本数量</a> 。</p>
+<h2 id="自定义分片坐落节点"><a href="#自定义分片坐落节点" class="headerlink" title="自定义分片坐落节点"></a>自定义分片坐落节点</h2><p>在我们的生产中，遇到了一个实际问题：在一个集群中，有两个索引比其余索引在数据量和 QPS 上的要求都高很多，这样在很多时候这两个索引会影响其余索引的性能。在阅读了 elasticsearch 的相关文档后，我们可以通过给集群打tag的方式，来将集群划分为几个子域，从而实现对特殊索引进行指定节点存储，使得其不影响其他索引的性能，同时虽然我们将 es 的节点划分为不同子域，但是实际上还是属于同一集群，对外提供服务，该改动对外界无感知，也做到了最小修改的情况下解决问题。</p>
+<h2 id="实践过程"><a href="#实践过程" class="headerlink" title="实践过程"></a>实践过程</h2><h3 id="调研-es-官方支持"><a href="#调研-es-官方支持" class="headerlink" title="调研 es 官方支持"></a>调研 es 官方支持</h3><p>在 elasticsearch 官方文档的 <code>IndexModules -&gt; Index Shard Allocation</code> 节的介绍中，我们可以通过 elasticsearch 原生提供的一些设置来对分片的分配进行 <strong>手动干预</strong>  。</p>
+<p>在 elasticsearch 中，提供了一种叫做 Shard Allocation Filtering 的策略。官方对于该策略的描述翻译过来是：</p>
+<blockquote>
+<p>Shard Allocation Filtering 允许你来指定索引分片允许被坐落在哪个节点</p>
+</blockquote>
+<p>在该部分文档的介绍中，可以了解到，我们可以通过给集群节点打tag的形式来给一个 elasticsearch 集群进行子域划分，从而指定某索引坐落在特定子域。</p>
+<p>该过程的具体实现如下。</p>
+<h3 id="给集群打-tag"><a href="#给集群打-tag" class="headerlink" title="给集群打 tag"></a>给集群打 tag</h3><p>我们可以通过启动时指定参数和在 elasticsearch.yml 文件配置两种方式来实现为集群打标签，具体如下。</p>
+<p>示例中，我们给集群添加 domain 属性。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 启动参数指定</span></div><div class="line"><span class="string">./elasticsearch</span> <span class="bullet">-Enode.attr.domain=domain1</span></div><div class="line"><span class="comment"># yml 配置文件指定</span></div><div class="line"><span class="string">node.attr.domain:</span> <span class="string">domain1</span></div></pre></td></tr></table></figure>
+<p>通过以上任一方法，便可实现对节点的配置添加。</p>
+<p>注： <code>该属性不在 elasticsearch 提供的可以热更新的配置中，故任一方法配置后均需要对 elasticsearch 进行重新启动</code></p>
+<h3 id="给索引添加配置"><a href="#给索引添加配置" class="headerlink" title="给索引添加配置"></a>给索引添加配置</h3><p>在给节点添加完配置后，我们在创建索引时，即可通过在 <strong>settings</strong> 中指定的方式，来实现将该索引的分片分配在指定机器（子域）的效果，该配置如下。</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="attr">"index.routing.allocation.include.domain"</span>: <span class="string">"domain1"</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>通过添加以上设置，便可将该索引的分片指定坐落在我们之前定义好的 domain1 中的节点上，从而实现一个集群中的子域划分。</p>
+<h3 id="现有索引迁移"><a href="#现有索引迁移" class="headerlink" title="现有索引迁移"></a>现有索引迁移</h3><p>在进行集群子域划分的过程中，免不了涉及到集群中现有索引的迁移，我这里的迁移方案如下：</p>
 <ol>
-<li>Java Runtime 在创建一个 String 对象时，会在 String 常量池中查找是否存在<em>值</em>相同的字符串对象。如果存在，则根据下面 2 或 3 过程进行执行；若不存在，则会在池中创建一个字符串</li>
-<li>针对 <code>使用 new 关键字</code>  或 <code>包含变量的表达式</code> 创建 String对象：在 Java Heap<sup>[1]</sup> 中创建一个 String 对象</li>
-<li>针对非使用 new 关键字创建 String对象：执行完 1 过程后，无后续 Java Heap 区的创建过程</li>
+<li>先给集群节点加上子域属性进行重启</li>
+<li>给现有索引添加 setting，设置该属性</li>
+<li>新添加指定不同子域的节点</li>
+<li>在新子域创建新索引</li>
 </ol>
-<h3 id="String-intern-方法"><a href="#String-intern-方法" class="headerlink" title="String.intern() 方法"></a>String.intern() 方法</h3><p>String.intern() 方法是一个 native 方法，其在 String 类定义中声明如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">native</span> String <span class="title">intern</span><span class="params">()</span></span>;</div></pre></td></tr></table></figure></p>
-<p>String.intern() 方法的作用是保证每个通过此方法实例的字符串都是常量池中的引用，其具体的优点有两条：</p>
-<ol>
-<li>由于字符串常量池中的字符串都是唯一的，所以全部使用 intern() 方法获取字符串会节省内存</li>
-<li>通过 intern() 方法获取到的字符串可以使用 <code>==</code> 替代 <code>equals()</code> 进行比较，速度较快<br>同时，由于 JVM 运行时内存分区的问题，使用 intern() 方法也会出现一些问题。<br>了解过 JVM 运行时结构的都应该知道，</li>
-</ol>
-<ul>
-<li>JDK 1.6 及以下：字符串常量池位于 Java Heap 的 PermGen(永久代) 区域，该区域是整个 JVM 实例共享的区域，如果使用 intern() 过多，会出现 OutOfMemoryError。</li>
-<li>JDK 1.7 及 1.8<br>下面一个例子可以看出通过不同方式创建 String 对象的比较<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"></div></pre></td></tr></table></figure>
-</li>
-</ul>
-<h2 id="操纵-String-对象"><a href="#操纵-String-对象" class="headerlink" title="操纵 String 对象"></a>操纵 String 对象</h2><h3 id="字符串截取-substring"><a href="#字符串截取-substring" class="headerlink" title="字符串截取 substring()"></a>字符串截取 substring()</h3><h2 id="StringBuilder-与-StringBuffer"><a href="#StringBuilder-与-StringBuffer" class="headerlink" title="StringBuilder 与 StringBuffer"></a>StringBuilder 与 StringBuffer</h2><h3 id="StringBuilder"><a href="#StringBuilder" class="headerlink" title="StringBuilder"></a>StringBuilder</h3><h3 id="StringBuffer"><a href="#StringBuffer" class="headerlink" title="StringBuffer"></a>StringBuffer</h3>
+<p>以上四个步骤按步骤完成，即可完成集群的改造。相比于将索引直接迁移到新集群，该方式能够降低成本，同时对外无感知，在单个索引影响性能极大的情况下，可以考虑通过这一方案进行解决。</p>
+
       
     </div>
 
@@ -416,7 +419,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/Java基础/" rel="tag"># Java基础</a>
+            <a href="/tags/elasticsearch/" rel="tag"># elasticsearch</a>
           
         </div>
       
@@ -429,8 +432,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/03/27/Elasticsearch学习——了解Lucene（二）/" rel="next" title="Elasticsearch学习——了解Lucene（二）">
-                <i class="fa fa-chevron-left"></i> Elasticsearch学习——了解Lucene（二）
+              <a href="/2018/08/30/hadoop2-6-HA模式搭建/" rel="next" title="Hadoop2.x HA模式搭建">
+                <i class="fa fa-chevron-left"></i> Hadoop2.x HA模式搭建
               </a>
             
           </div>
@@ -438,10 +441,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/05/24/Kafka在单节点主机上的搭建/" rel="prev" title="Kafka在单节点主机上的搭建">
-                Kafka在单节点主机上的搭建 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -536,7 +535,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-count">7</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -571,7 +570,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#String-类的三大特性"><span class="nav-number">1.</span> <span class="nav-text">String 类的三大特性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#String-对象的基本使用与比较"><span class="nav-number">2.</span> <span class="nav-text">String 对象的基本使用与比较</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#String-对象的创建"><span class="nav-number">2.1.</span> <span class="nav-text">String 对象的创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#String-intern-方法"><span class="nav-number">2.2.</span> <span class="nav-text">String.intern() 方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#操纵-String-对象"><span class="nav-number">3.</span> <span class="nav-text">操纵 String 对象</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#字符串截取-substring"><span class="nav-number">3.1.</span> <span class="nav-text">字符串截取 substring()</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#StringBuilder-与-StringBuffer"><span class="nav-number">4.</span> <span class="nav-text">StringBuilder 与 StringBuffer</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#StringBuilder"><span class="nav-number">4.1.</span> <span class="nav-text">StringBuilder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#StringBuffer"><span class="nav-number">4.2.</span> <span class="nav-text">StringBuffer</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ElasticSearch-索引分片"><span class="nav-number">1.</span> <span class="nav-text">ElasticSearch 索引分片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义分片坐落节点"><span class="nav-number">2.</span> <span class="nav-text">自定义分片坐落节点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践过程"><span class="nav-number">3.</span> <span class="nav-text">实践过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#调研-es-官方支持"><span class="nav-number">3.1.</span> <span class="nav-text">调研 es 官方支持</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#给集群打-tag"><span class="nav-number">3.2.</span> <span class="nav-text">给集群打 tag</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#给索引添加配置"><span class="nav-number">3.3.</span> <span class="nav-text">给索引添加配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#现有索引迁移"><span class="nav-number">3.4.</span> <span class="nav-text">现有索引迁移</span></a></li></ol></li></ol></div>
             
 
           </div>
