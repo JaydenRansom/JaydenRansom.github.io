@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="elasticsearch,大数据," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="Elasticsearch 监控指标由于最近在做 ES 集群监控相关工作，所以首要的便是收集需要监控的指标。 Elasticsearch的监控可以分为 集群 和 节点 两个维度。 集群维度监控指标获取Elasticsearch 提供了原生的 cluster API 可以进行集群状态的获取，具体如下：123GET _cluster/health# curl实现curl -XGET &amp;apos;ho">
+<meta name="keywords" content="elasticsearch,大数据">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Elasticsearch监控——磁盘利用率">
+<meta property="og:url" content="https://jaydenransom.github.io/2019/01/06/Elasticsearch监控——磁盘利用率/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="Elasticsearch 监控指标由于最近在做 ES 集群监控相关工作，所以首要的便是收集需要监控的指标。 Elasticsearch的监控可以分为 集群 和 节点 两个维度。 集群维度监控指标获取Elasticsearch 提供了原生的 cluster API 可以进行集群状态的获取，具体如下：123GET _cluster/health# curl实现curl -XGET &amp;apos;ho">
+<meta property="og:updated_time" content="2019-01-06T05:42:05.905Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Elasticsearch监控——磁盘利用率">
+<meta name="twitter:description" content="Elasticsearch 监控指标由于最近在做 ES 集群监控相关工作，所以首要的便是收集需要监控的指标。 Elasticsearch的监控可以分为 集群 和 节点 两个维度。 集群维度监控指标获取Elasticsearch 提供了原生的 cluster API 可以进行集群状态的获取，具体如下：123GET _cluster/health# curl实现curl -XGET &amp;apos;ho">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2019/01/06/Elasticsearch监控——磁盘利用率/"/>
+
+
+
+
+
+  <title>Elasticsearch监控——磁盘利用率 | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2019/01/06/Elasticsearch监控——磁盘利用率/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Elasticsearch监控——磁盘利用率</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-06T09:51:56+08:00">
+                2019-01-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/elasticsearch/" itemprop="url" rel="index">
+                    <span itemprop="name">elasticsearch</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="Elasticsearch-监控指标"><a href="#Elasticsearch-监控指标" class="headerlink" title="Elasticsearch 监控指标"></a>Elasticsearch 监控指标</h2><p>由于最近在做 ES 集群监控相关工作，所以首要的便是收集需要监控的指标。</p>
+<p>Elasticsearch的监控可以分为 <strong>集群</strong> 和 <strong>节点</strong> 两个维度。</p>
+<h3 id="集群维度监控指标获取"><a href="#集群维度监控指标获取" class="headerlink" title="集群维度监控指标获取"></a>集群维度监控指标获取</h3><p>Elasticsearch 提供了原生的 cluster API 可以进行集群状态的获取，具体如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">GET _cluster/health</div><div class="line"># curl实现</div><div class="line">curl -XGET &apos;host:9200/_cluster/health?pretty=true&apos;</div></pre></td></tr></table></figure></p>
+<p>该命令获取结果如下：<br><figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">   <span class="attr">"cluster_name"</span>: <span class="string">"elasticsearch"</span>,</div><div class="line">   <span class="attr">"status"</span>: <span class="string">"green"</span>,</div><div class="line">   <span class="attr">"timed_out"</span>: <span class="literal">false</span>,</div><div class="line">   <span class="attr">"number_of_nodes"</span>: <span class="number">1</span>,</div><div class="line">   <span class="attr">"number_of_data_nodes"</span>: <span class="number">1</span>,</div><div class="line">   <span class="attr">"active_primary_shards"</span>: <span class="number">2</span>,</div><div class="line">   <span class="attr">"active_shards"</span>: <span class="number">2</span>,</div><div class="line">   <span class="attr">"relocating_shards"</span>: <span class="number">0</span>,</div><div class="line">   <span class="attr">"initializing_shards"</span>: <span class="number">0</span>,</div><div class="line">   <span class="attr">"unassigned_shards"</span>: <span class="number">0</span></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>由上面返回结果可以看到，该API主要返回 es 的整体健康信息，包括集群健康度、分片状态等。</p>
+<p>除 <code>_cluster/health</code> API 外，ES 还提供了一个获取集群全量统计信息的 API：_cluster/stats。<br>该接口统计信息包含集群的分片数、文档数、段信息、插件信息以及JVM状态、系统级别的监控等等。</p>
+<h3 id="节点维度监控指标"><a href="#节点维度监控指标" class="headerlink" title="节点维度监控指标"></a>节点维度监控指标</h3><p>Elasticsearch 提供了 <code>_node/stats</code> API 用来进行节点监控信息的获取，该API可以通过参数组合来获取不同的指标信息，使用如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">GET _node/stats</div><div class="line"># curl 实现</div><div class="line">curl -XGET &apos;host:9200/_nodes/_all/stats/fs,jvm,os,indices?pretty=true&apos;</div></pre></td></tr></table></figure></p>
+<p>通过该命令，可以获取 ES 集群节点的 cpu 利用率、jvm 情况等核心监控指标。</p>
+<h2 id="磁盘IO使用率监控"><a href="#磁盘IO使用率监控" class="headerlink" title="磁盘IO使用率监控"></a>磁盘IO使用率监控</h2><p>通过 ES 原生提供的API，其实已经可以满足对 cpu、jvm 等重要监控项的监控支持，但是在实际应用中，data 节点的一个瓶颈来源于磁盘的io。换而言之，磁盘io利用率也是一个重点的监控指标。</p>
+<p>通过 ES 的 node API 获取的结果中，针对节点的 IO 信息的描述，具体如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">&quot;io_stats&quot; : &#123;</div><div class="line">  &quot;devices&quot; : [</div><div class="line">    &#123;</div><div class="line">      &quot;device_name&quot; : &quot;sda&quot;,</div><div class="line">      &quot;operations&quot; : 92636401,</div><div class="line">      &quot;read_operations&quot; : 573880,</div><div class="line">      &quot;write_operations&quot; : 92062521,</div><div class="line">      &quot;read_kilobytes&quot; : 29470340,</div><div class="line">      &quot;write_kilobytes&quot; : 4085359108</div><div class="line">    &#125;</div><div class="line">  ],</div><div class="line">  &quot;total&quot; : &#123;</div><div class="line">    &quot;operations&quot; : 92636401,</div><div class="line">    &quot;read_operations&quot; : 573880,</div><div class="line">    &quot;write_operations&quot; : 92062521,</div><div class="line">    &quot;read_kilobytes&quot; : 29470340,</div><div class="line">    &quot;write_kilobytes&quot; : 4085359108</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>以上可以看出，针对于磁盘IO信息，仅给出了启动到现在的读/写操作数、读/写数据量的数据，通过这些数据并不能算出单位时间内IO所用的时间占比，故需要考虑其他思路进行该监控指标的获取。</p>
+<h3 id="考虑使用iostat"><a href="#考虑使用iostat" class="headerlink" title="考虑使用iostat"></a>考虑使用iostat</h3><p>iostat 作为一个强大的 Linux 监控工具，其提供磁盘级的I/O状态。此处使用的命令如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">iostat -xd 1</div></pre></td></tr></table></figure></p>
+<p>通过该命令，可以查看实时的磁盘io信息。输出结果中，有一个名为 <strong>%util</strong> 的字段，该字段表示该间隔时间内，有多少的时间被用于I/O操作，当该字段接近100%，说明设备产生饱和，也就是我们所说的IO瓶颈。</p>
+<p>得出结论，iostat 中的 %util 指标即为我们想要的监控数据，但是我们的目的是远端获取该值，远程直接执行iostat命令肯定是个不太好的方式。在此基础上，调查到 iostat 命令是基于系统级别的 <code>/proc/diskstats</code> 文件来计算的，故我们可以直接从 /proc/diskstats 文件中读取所需要的磁盘指标元数据，然后自行进行计算。</p>
+<h3 id="实现-iostat-util-指标计算"><a href="#实现-iostat-util-指标计算" class="headerlink" title="实现 iostat %util 指标计算"></a>实现 iostat %util 指标计算</h3><p>通过 <code>cat /proc/diskstats</code> 命令可以获取文件信息，每一行代表一个设备的实时信息数据，举例如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">202 0 xvda 88773 1108 2010114 551529 31249889 47896636 633188176 338606000 0 56198497 339137808</div></pre></td></tr></table></figure></p>
+<p>其中每列的简介如下：</p>
+<ul>
+<li>第一列：设备号</li>
+<li>第二列：次设备号</li>
+<li>第三列：设备名称</li>
+<li>第四列：成功完成读的总次数</li>
+<li>第五列：合并读次数</li>
+<li>第六列：读扇区的次数</li>
+<li>第七列：读花费时间(ms)</li>
+<li>第八列：成功完成写的总次数</li>
+<li>第九列：合并写次数</li>
+<li>第十列：写扇区的次数</li>
+<li>第十一列：写花费时间(ms)</li>
+<li>第十二列：正在处理的输入/输出请求数</li>
+<li>第十三列：输入/输出操作花费的时间(ms)</li>
+<li>第十四列：输入/输出操作花费的加权时间(ms)</li>
+</ul>
+<p>由此我们可以看出，我们所需要的便是第十三列的值。针对一个时间间隔，取开始和结束两次的值，即可计算该单位时间内磁盘 IO 利用率。我所使用的命令如下：</p>
+<p>由于机器可能挂载多个设备，为了使得命令通用，都取最大的一行默认为 elasticsearch data 挂载到的设备，具体用到命令如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">cat /proc/diskstats | awk &apos;BEGIN &#123;max = 0&#125; &#123;if ($4+0 &gt; max+0) &#123;max=$4 ;content=$0&#125; &#125; END &#123;print content&#125;&apos;| awk &apos;&#123;print $13&#125;&apos;</div></pre></td></tr></table></figure>
+<p>在该命令中，以成功完成读的总次数为基础进行排序，<code>+0</code> 是为了保证以数字而不是字符串进行排序，以获取 data 所存储的设备，然后取出我们所需要的输入/输出操作花费的时间。</p>
+<p>有了这个数据，便可以在程序中进行磁盘IO利用率指标的计算，并针对数据进行持久化记录。</p>
+<p>另：如果设备较少或者监控的集群较少，也可以一次取出一定间隔的两次数据，命令如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">cat /proc/diskstats | awk &apos;BEGIN &#123;max = 0&#125; &#123;if ($4+0 &gt; max+0) &#123;max=$4 ;content=$0&#125; &#125; END &#123;print content&#125;&apos;| awk &apos;&#123;print $13&#125;&apos;; sleep 10; cat /proc/diskstats | awk &apos;BEGIN &#123;max = 0&#125; &#123;if ($4+0 &gt; max+0) &#123;max=$4 ;content=$0&#125; &#125; END &#123;print content&#125;&apos;| awk &apos;&#123;print $13&#125;&apos;</div></pre></td></tr></table></figure></p>
+<p>取到两次数据作差再除以时间间隔(ms)，即可完成计算。公式如下：</p>
+<p>$$ioRate = \frac{end-start}{period} * 100\% $$</p>
+<p>其中，end和start分别为时间间隔结束和开始时通过命令取到的 输入/输出操作花费的时间毫秒数，period为时间间隔，<strong>单位为毫秒</strong>。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>Elasticsearch 官方提供的 API 已经能满足大多数监控指标的采集需求，此文作为补充，补充了一下针对于磁盘IO利用率的采集方式。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/elasticsearch-大数据/" rel="tag"># elasticsearch,大数据</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/11/18/Elasticsearch-自定义分片分配/" rel="next" title="Elasticsearch 自定义分片分配">
+                <i class="fa fa-chevron-left"></i> Elasticsearch 自定义分片分配
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Elasticsearch-监控指标"><span class="nav-number">1.</span> <span class="nav-text">Elasticsearch 监控指标</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#集群维度监控指标获取"><span class="nav-number">1.1.</span> <span class="nav-text">集群维度监控指标获取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#节点维度监控指标"><span class="nav-number">1.2.</span> <span class="nav-text">节点维度监控指标</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#磁盘IO使用率监控"><span class="nav-number">2.</span> <span class="nav-text">磁盘IO使用率监控</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#考虑使用iostat"><span class="nav-number">2.1.</span> <span class="nav-text">考虑使用iostat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实现-iostat-util-指标计算"><span class="nav-number">2.2.</span> <span class="nav-text">实现 iostat %util 指标计算</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">3.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
