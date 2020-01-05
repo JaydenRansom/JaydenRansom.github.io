@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Java," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="从HashMap 谈起从接触Java以来，HashMap便成了很让人熟知的一个存在。无论是各种面经还是实际开发应用中，都绕不过HashMap这一数据结构。它由key-value的结构组成，并有着O(1)的检索效率。在不需要顺序的场景下，HashMap是一个很易用的结构。谈起HashMap，都知道其实现了Map接口，也在无数面经和博客中看到过其put、get、resize等的原理。作为基于Hash的">
+<meta name="keywords" content="Java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="重谈HashMap（一）">
+<meta property="og:url" content="https://jaydenransom.github.io/2019/10/18/重谈HashMap（一）/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="从HashMap 谈起从接触Java以来，HashMap便成了很让人熟知的一个存在。无论是各种面经还是实际开发应用中，都绕不过HashMap这一数据结构。它由key-value的结构组成，并有着O(1)的检索效率。在不需要顺序的场景下，HashMap是一个很易用的结构。谈起HashMap，都知道其实现了Map接口，也在无数面经和博客中看到过其put、get、resize等的原理。作为基于Hash的">
+<meta property="og:updated_time" content="2019-10-27T09:22:08.016Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="重谈HashMap（一）">
+<meta name="twitter:description" content="从HashMap 谈起从接触Java以来，HashMap便成了很让人熟知的一个存在。无论是各种面经还是实际开发应用中，都绕不过HashMap这一数据结构。它由key-value的结构组成，并有着O(1)的检索效率。在不需要顺序的场景下，HashMap是一个很易用的结构。谈起HashMap，都知道其实现了Map接口，也在无数面经和博客中看到过其put、get、resize等的原理。作为基于Hash的">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2019/10/18/重谈HashMap（一）/"/>
+
+
+
+
+
+  <title>重谈HashMap（一） | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2019/10/18/重谈HashMap（一）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">重谈HashMap（一）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-10-18T20:30:43+08:00">
+                2019-10-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index">
+                    <span itemprop="name">Java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="从HashMap-谈起"><a href="#从HashMap-谈起" class="headerlink" title="从HashMap 谈起"></a>从HashMap 谈起</h2><p>从接触Java以来，HashMap便成了很让人熟知的一个存在。无论是各种面经还是实际开发应用中，都绕不过HashMap这一数据结构。它由key-value的结构组成，并有着O(1)的检索效率。在不需要顺序的场景下，HashMap是一个很易用的结构。<br>谈起HashMap，都知道其实现了Map接口，也在无数面经和博客中看到过其put、get、resize等的原理。<br>作为基于Hash的数据结构，HashMap于JDK 1.2 中提供，晚于JDK 1.0中就提供的Hashtable。<br>接触Java三年有余，在经历了大型工程的开发和生产环境的挑战后，觉得还是应该回归本心，重读源码。抛开片面的介绍，仅依靠源码实现来体会设计者的设计之道。在这一举措的最开始，我决定重读HashMap源码。</p>
+<h2 id="HashMap-文档"><a href="#HashMap-文档" class="headerlink" title="HashMap 文档"></a>HashMap 文档</h2><h3 id="HashMap-Java-Doc-概览"><a href="#HashMap-Java-Doc-概览" class="headerlink" title="HashMap Java Doc 概览"></a>HashMap Java Doc 概览</h3><p>谈到Java源码，其在类定义中有很多的相关文档/注释叙述，对HashMap的了解，也让我们从这些设计者留下的痕迹开始。<br>Java源码中，HashMap位于java.util包下，其声明文档部分包含九段叙述。大体可以按段落总结如下：</p>
+<ul>
+<li>HashMap是以Hash表为基础结构的一个Map的实现。HashMap提供了全部Map操作特性，并允许 <code>null</code> 作为key和value。除却允许 null 和非线程安全，其在一定程度上等同于Hashtable。HashMap不保证顺序。</li>
+<li>在没有哈希冲突的情况下，HashMap的实现提供的get/set方法可达到O(1)常数级别的时间复杂度。对于HashMap来说，其遍历时间与buckets数和bucket大小的乘积成正比。因此，在迭代性能表现重要的时候，初始容量不设置过大（或负载因子过低）是十分重要的。</li>
+<li>初始容量、和负载因子这两个参数直接影响一个HashMap的实例的性能。容量（Capital）代表HashMap实例中的bucket数，初始容量就是在创建HashMap时其包含的bucket数目。负载因子则是HashMap达到多满才会自动扩容的度量值。当HashMap中的k-v对的数量超过了负载因子和当前容量的的乘积，HashMap中的哈希表就会进行扩容，扩容后的bucket数是之前的二倍。</li>
+<li>作为一个默认规则，0.75作为默认的负载因子，其在时间和空间上达到了一个平衡。如果负载因子的值变得更大，空闲的空间会降低，但是会增加查找时付出的时间代价（包括影响put/get等大多数方法）。为了尽可能少的对HashMap中元素进行ReHash的操作，所以应该在其初始化Capital（bucket数）的时候就评估好HashMap中所要包含的Entry（即k-v对）数及负载因子。如果初始bucket数大于总key-value对的数量与负载因子的商，那么该HashMap永远不会发生扩容。</li>
+<li>如果建立一个存储有较多的映射（key-value对）的HashMap，初始化创建容量较大会比初始容量小，进行多次自动扩容的效率要高。对于HashMap，如果多个key具有相同的hashCode（哈希冲突），那么将会大幅降低查询效率。为了改善性能，在HashMap中针对于实现了Comparable的key，会进行排序来降低哈希冲突带来的影响。</li>
+<li>HashMap这一实现是非线程安全的。如果想要在多线程场景下实现HashMap的变化，就需要通过synchronized来实现加锁，或者是使用Collections#synchonizedMap来实现同步控制。</li>
+<li>HashMap所创建出的迭代器具有fail-fast特性。</li>
+</ul>
+<p>上文便是HashMap Java Doc中所含基本信息的翻译。共九段，其中后两段是对于fail-fast特性的介绍。在Java Doc中，就特性、使用注意事项等多方面进行了介绍。</p>
+<h3 id="HashMap-特性简介"><a href="#HashMap-特性简介" class="headerlink" title="HashMap 特性简介"></a>HashMap 特性简介</h3><ol>
+<li>允许 <code>null</code> 作为key和value;</li>
+<li>非线程安全，针对于多线程场景下，应使用synchronized或其他同步方式进行同步处理</li>
+<li>使用时应根据实际业务场景估算初始容量，在一定程度上避免二次扩容</li>
+<li>使用时应尽量避免哈希冲突，哈希冲突会降低查询效率</li>
+<li>HashMap 具有fail-fast特性</li>
+</ol>
+<p>以上HashMap的特性均为从Java Doc中提炼出。其已经覆盖了我们在日常使用中比较经常遇到的一些需要注意的问题。在使用一个第三方类库/插件时，仔细阅读文档还是十分有必要的。</p>
+<h3 id="HashMap-Implemention-Notes-概览"><a href="#HashMap-Implemention-Notes-概览" class="headerlink" title="HashMap Implemention Notes 概览"></a>HashMap Implemention Notes 概览</h3><p>由HashMap的Java Doc中，可以得到上文中介绍的特性。作为补充，可以继续阅读在源码中声明的 Implemention Notes。HashMap的Implementions Note简介如下：</p>
+<ul>
+<li>HashMap在常规情况下是一个由基础节点构成的哈希表，当桶变得很大时（同一哈希值对应的元素过多）时，节点会变成和TreeMap中实现类似的树节点。在实现上，除却适配TreeNode场景下，大多数方法都尽量使用普通Node节点，适配通常是通过检查Node的实例类型来判断。除却节点过多时具有更快的查找速度，TreeNode和普通Node节点一样来遍历和进行其他操作。然而，由于绝大多数情况下HashMap中每个桶中的节点都不多，所以在HashMap的方法中，将会延迟判断TreeNode是否存在。</li>
+<li>HashMap中的树状结构，默认按照hashCode进行排序。如果要排序的节点实现了Comparable接口，那么就按照Comparable的规则进行排序（判断是否Comparable是通过反射实现的——可查看comparableClassFor方法）。当key不具有相同的hash值或实现了Comparable接口时，树节点添加操作的时间复杂度在最坏情况下是O(log n)，因此，影响其性能的主要因素是hash值不够均匀</li>
+<li>由于TreeNode所占内存是Node的两倍，HashMap仅当bucket足够大的时候才会使用TreeNode来替换Node，同时当容量变小后，会将TreeNode转化回Node。如果hash算法设计的较好，TreeNode通常不会出现在HashMap中。理想化的场景下，在随机的hashCode下，每个hash桶内的元素个数应符合泊松分布。</li>
+<li>通常情况下，HashMap中树的根节点为其第一个节点。然而，当被迭代器执行remove操作时，root也许会改变，但是会通过父引用来进行修复。</li>
+<li>全部需要使用hashCode的内部方法都会将hashcode以参数形式来进行接收，这样能够允许他们互相调用的时候不需要重新计算hash值。绝大多数内部方法还接收一个标识当前桶的tab参数。</li>
+<li>当节点序列转化成树、切分、从树退化为普通节点时，HashMap中的实现会保持其相对顺序不变，以此更好的保护序列，并且当调用迭代器的remove方法时，保证最小变更。同时当实现了Comparable的树节点被插入时，通过不断的调整平衡来维持一个全局有序。</li>
+</ul>
+<p>上文是HashMap中 Implemention Notes的简单概览。从中我们可以看出，HashMap中虽然在哈希冲突的场景下，会通过Node转化为TreeNode来提高查找效率，但是通常情况下会避免此类场景的发生。同时，HashMap的实现中也有能够日常编码中借鉴的地方：内部方法通常不会计算hash值，而是当成一个参数来接收。在日常编码中，对于一些通用的内部方法，我们也可以通过这一策略来避免重复的查库/耗cpu的逻辑。</p>
+<h2 id="常量定义"><a href="#常量定义" class="headerlink" title="常量定义"></a>常量定义</h2><p>了解完Implemention Notes，接下来可以看一下相关的常量定义。一般来说，定义为常量的是一些通用的规则。在HashMap中，共定义了7个常量。其中除却序列化id外共有六个。其简介如下：</p>
+<ul>
+<li>DEFAULT_INITIAL_CAPACITY：默认初始容量，默认为2^4，在构造器未指定初始容量时使用</li>
+<li>MAXIMUM_CAPACITY：HashMap最大容量，默认为2^30</li>
+<li>DEFAULT_LOAD_FACTOR：默认负载因子，默认为0.75f</li>
+<li>TREEIFY_THRESHOLD：朴素节点转成树节点的阈值，默认为8，该数量无法更改</li>
+<li>UNTREEIFY_THRESHOLD：树节点退化为朴素节点的阈值，默认为6，该数量无法更改</li>
+<li>MIN_TREEIFY_CAPACITY：朴素节点转化为树节点后HashMap容量的最小值，该数量无法更改</li>
+</ul>
+<p>由以上常量介绍可以看出，HashMap中针对常量的定义主要有两类，一类是推荐的默认值，一类是完全意义上的不可变常量。相对来讲，在日常编码中也可以在这两种场景下优先使用常量，来避免代码变更对于一些重要/默认值的更改。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>源码阅读是一个攻城狮必不可缺的能力。源码不止包含逻辑代码，文档也是其中一部分。通过文档，可以大体了解有一个类的大体特性和常见注意事项，为正文代码阅读打下基础。<br>下篇文章中，将会针对具体HashMap的实现代码层面进行分析，从其实现中，学习设计思想与理念。<br>在基本略读了HashMap的文档后，针对于一些HashMap的常见特性已经有了基本的了解。在后续对HashMap的探究中，将针对于常见操作中的初始化、扩容、节点转换等；以及探究性的内容，包括容量为什么是2的幂次，默认负载因子是如何得出的来进行分类初探。<br>由于水平有限，如有错误欢迎指正。也欢迎关注 github.com/JaydenRansom 及通过邮箱 JaydenRansom@outlook.com交流。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java/" rel="tag"># Java</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/07/NIO与Reactor/" rel="next" title="NIO与Reactor">
+                <i class="fa fa-chevron-left"></i> NIO与Reactor
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/12/15/重谈HashMap（二）/" rel="prev" title="重谈HashMap（二）">
+                重谈HashMap（二） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#从HashMap-谈起"><span class="nav-number">1.</span> <span class="nav-text">从HashMap 谈起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HashMap-文档"><span class="nav-number">2.</span> <span class="nav-text">HashMap 文档</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HashMap-Java-Doc-概览"><span class="nav-number">2.1.</span> <span class="nav-text">HashMap Java Doc 概览</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HashMap-特性简介"><span class="nav-number">2.2.</span> <span class="nav-text">HashMap 特性简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HashMap-Implemention-Notes-概览"><span class="nav-number">2.3.</span> <span class="nav-text">HashMap Implemention Notes 概览</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常量定义"><span class="nav-number">3.</span> <span class="nav-text">常量定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
