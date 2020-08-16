@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Java并发," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="探幽一词，初见于C++ Primer，表示对一个事物进行深刻的了解。 前文优雅的使用线程池中，介绍了线程池使用上面的tips，以及指出了juc中Executors工厂的问题所在。了解过上文的内容后，可以看出Java中线程池的实现核心类便是 ThreadPoolExecutor。 本文将从 ThreadPoolExecutor 的详细实现谈起，以避免使用线程池给程序的隐患。 为什么使用线程池说到为什">
+<meta name="keywords" content="Java并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线程池探幽（一）">
+<meta property="og:url" content="https://jaydenransom.github.io/2020/08/16/线程池探幽（一）/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="探幽一词，初见于C++ Primer，表示对一个事物进行深刻的了解。 前文优雅的使用线程池中，介绍了线程池使用上面的tips，以及指出了juc中Executors工厂的问题所在。了解过上文的内容后，可以看出Java中线程池的实现核心类便是 ThreadPoolExecutor。 本文将从 ThreadPoolExecutor 的详细实现谈起，以避免使用线程池给程序的隐患。 为什么使用线程池说到为什">
+<meta property="og:updated_time" content="2020-08-16T02:15:59.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="线程池探幽（一）">
+<meta name="twitter:description" content="探幽一词，初见于C++ Primer，表示对一个事物进行深刻的了解。 前文优雅的使用线程池中，介绍了线程池使用上面的tips，以及指出了juc中Executors工厂的问题所在。了解过上文的内容后，可以看出Java中线程池的实现核心类便是 ThreadPoolExecutor。 本文将从 ThreadPoolExecutor 的详细实现谈起，以避免使用线程池给程序的隐患。 为什么使用线程池说到为什">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2020/08/16/线程池探幽（一）/"/>
+
+
+
+
+
+  <title>线程池探幽（一） | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2020/08/16/线程池探幽（一）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">线程池探幽（一）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-08-16T10:09:36+08:00">
+                2020-08-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mutithread/" itemprop="url" rel="index">
+                    <span itemprop="name">Java并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>探幽一词，初见于C++ Primer，表示对一个事物进行深刻的了解。</p>
+<p>前文<a href="http://https://zhuanlan.zhihu.com/p/60986630" target="_blank" rel="external">优雅的使用线程池</a>中，介绍了线程池使用上面的tips，以及指出了juc中Executors工厂的问题所在。<br>了解过上文的内容后，可以看出Java中线程池的实现核心类便是 <code>ThreadPoolExecutor</code>。</p>
+<p>本文将从 <code>ThreadPoolExecutor</code> 的详细实现谈起，以避免使用线程池给程序的隐患。</p>
+<h2 id="为什么使用线程池"><a href="#为什么使用线程池" class="headerlink" title="为什么使用线程池"></a>为什么使用线程池</h2><p>说到为什么使用线程池，其实最根本的原因是因为创建/销毁线程是十分占用资源的，同时执行相同任务的多个线程也需要进行统一的管理。在此场景下，享元模式的设计思想，即用共享技术有效的支持大量的细粒度对象，便可以发挥作用，线程池也就应运而生。</p>
+<p>通过线程池的使用，降低了创造/销毁线程的成本，也降低了对于多个线程的维护成本。线程池主要实现了对线程资源的持有，以及对于任务的调度。如上文所提，Java通过ThreadPoolExecutor来实现线程池，那么接下来就一点一点的看一下ThreadPoolExecutor的实现。</p>
+<h2 id="ThreadPoolExecutor"><a href="#ThreadPoolExecutor" class="headerlink" title="ThreadPoolExecutor"></a>ThreadPoolExecutor</h2><h3 id="前序"><a href="#前序" class="headerlink" title="前序"></a>前序</h3><p>Java源码中，类头的JavaDoc通常包含有该类的基本特性以及概览信息，对ThreadPoolExecutor的解读也从这开始。</p>
+<ul>
+<li>ThreadPoolExecutor是ExecutorService的一个实现，通过使用池化共享的线程池，来执行任务，通常使用Executors提供的工厂方法来构造；</li>
+<li>线程池声明了如下两个问题：由于降低了每个任务实际执行前的开销，在大量异步任务的场景下，使用线程池通常会提供更好的性能；同时其提供了一种将任务集合和资源（线程）绑定的策略，除此之外ThreadPoolExecutor还提供一些基本的统计信息，例如完成任务数等；</li>
+<li>ThreadPoolExecutor类提供了很多钩子用于扩展，推荐使用Executors工厂类进行使用，如果需要扩展，需要注意遵循以下指导。</li>
+</ul>
+<p>ThreadPoolExecutor类的JavaDoc主要分为三部分，在这里我们省略了第三部门的具体关于参数的最佳实践并在后文专门讨论。</p>
+<p>从三段文字中，可以解读内容如下：</p>
+<ul>
+<li>ThreadPoolExecutor类实现了 ExecutorService的接口，可以通过其submit接口进行任务的递交，本质上是一个 <code>任务执行器</code> 的线程池实现</li>
+<li>线程池在大量任务场景下效率较好，是由于减少了每次创建/销毁线程的开销</li>
+<li>由于参数复杂，不建议自己直接创建ThreadPoolExecutor实例</li>
+</ul>
+<h3 id="ThreadPoolExecutor的初始化"><a href="#ThreadPoolExecutor的初始化" class="headerlink" title="ThreadPoolExecutor的初始化"></a>ThreadPoolExecutor的初始化</h3><p>官方Doc中至少在jdk1.8中仍建议使用Executors工厂来屏蔽具体线程池创建的参数细节，但是该工厂隐患较大，容易造成内存OOM的风险，故实际使用中，还是应该直接使用ThreadPoolExecutor来使用线程池，使用的最开始，自然是从构造方法开始。<br> <figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="title">ThreadPoolExecutor</span><span class="params">(<span class="keyword">int</span> corePoolSize,</span></span></div><div class="line">                             <span class="keyword">int</span> maximumPoolSize,</div><div class="line">                             <span class="keyword">long</span> keepAliveTime,</div><div class="line">                             TimeUnit unit,</div><div class="line">                             BlockingQueue&lt;Runnable&gt; workQueue,</div><div class="line">                             ThreadFactory threadFactory,</div><div class="line">                             RejectedExecutionHandler handler) &#123;</div><div class="line">       <span class="keyword">if</span> (corePoolSize &lt; <span class="number">0</span> ||</div><div class="line">           maximumPoolSize &lt;= <span class="number">0</span> ||</div><div class="line">           maximumPoolSize &lt; corePoolSize ||</div><div class="line">           keepAliveTime &lt; <span class="number">0</span>)</div><div class="line">           <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException();</div><div class="line">       <span class="keyword">if</span> (workQueue == <span class="keyword">null</span> || threadFactory == <span class="keyword">null</span> || handler == <span class="keyword">null</span>)</div><div class="line">           <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException();</div><div class="line">       <span class="keyword">this</span>.acc = System.getSecurityManager() == <span class="keyword">null</span> ?</div><div class="line">               <span class="keyword">null</span> :</div><div class="line">               AccessController.getContext();</div><div class="line">       <span class="keyword">this</span>.corePoolSize = corePoolSize;</div><div class="line">       <span class="keyword">this</span>.maximumPoolSize = maximumPoolSize;</div><div class="line">       <span class="keyword">this</span>.workQueue = workQueue;</div><div class="line">       <span class="keyword">this</span>.keepAliveTime = unit.toNanos(keepAliveTime);</div><div class="line">       <span class="keyword">this</span>.threadFactory = threadFactory;</div><div class="line">       <span class="keyword">this</span>.handler = handler;</div><div class="line">   &#125;</div></pre></td></tr></table></figure></p>
+<p> 由于在之前文章中已经介绍过参数的意义，故在此不进行赘述。简单的来说，此类的构造方法只是通过参数进行基本成员的初始化，并无其他操作信息，值得注意的是，在构造方法里并没有创建新线程。结合JavaDoc注释，<strong>线程池在执行任务，且当前核心线程数少于指定的最大核心线程数时，会进行线程的创建</strong>。这也侧面佐证了为什么定义中提到“大量”任务场景下性能较优，因为在线程池接受的任务少于核心线程数的时候，仍然每次执行任务要创建线程，造成额外的开销。</p>
+<h3 id="提交任务"><a href="#提交任务" class="headerlink" title="提交任务"></a>提交任务</h3><p>对于线程池，最核心的就是提交任务和执行的能力。从源码中可以看出，ThreadPoolExecutor 中与提交相关的接口定义位于其实现的 <code>ExecutorService</code> 接口中。<br>在 <code>ExecutorService</code> 接口的定义中，官方提到：ExecutorService 是一个提供了终止管理和可通过 Future 机制追踪异步任务执行情况的 Executor（执行器）。ExecutorService中定义了多种重载的 <code>submit</code> 方法用于任务的提交，具体如下：</p>
+<ul>
+<li><t> Future<t> submit(Callable<t> task)： 提交有返回值的任务，并可通过Future获取返回值（一旦任务执行完成，便可以通过Future#get获取到执行结果）</t></t></t></li>
+<li><t> Future<t> submit(Runnable task, T result)：提交无返回值任务和返回值</t></t></li>
+<li>Future submit(Runnable task)：提交无返回值任务</li>
+</ul>
+<p>以上三个方法便为核心的提交任务方法，除此之外 ExecutorService 还进行了 invokeAll 的多种重载定义，用来批量提交任务。</p>
+<h4 id="submit-方法"><a href="#submit-方法" class="headerlink" title="submit 方法"></a>submit 方法</h4><p>在多种重载下，我们从最常用的 <code>submit(Runnable)</code> 开始看起。ThreadPoolExecutor 中并没有直接实现该方法，其是由 ThreadPoolExecutor 的父类 <code>AbstractExecutorService</code> 实现。该方法定义如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line">    <span class="comment">/**</span></div><div class="line">     * <span class="doctag">@throws</span> RejectedExecutionException &#123;<span class="doctag">@inheritDoc</span>&#125;</div><div class="line">     * <span class="doctag">@throws</span> NullPointerException       &#123;<span class="doctag">@inheritDoc</span>&#125;</div><div class="line">     */</div><div class="line">    <span class="keyword">public</span> Future&lt;?&gt; submit(Runnable task) &#123;</div><div class="line">        <span class="keyword">if</span> (task == <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException();</div><div class="line">        RunnableFuture&lt;Void&gt; ftask = newTaskFor(task, <span class="keyword">null</span>);</div><div class="line">        execute(ftask);</div><div class="line">        <span class="keyword">return</span> ftask;</div><div class="line">    &#125;</div><div class="line">``` </div><div class="line">由上文中方法定义看出，submit 方法做的事情只有如下三步骤：</div><div class="line">- 将 Runnable 任务包装成 RunnableFuture</div><div class="line">- 调用 execute 方法提交并执行</div><div class="line">- 将根据传入 Runnable 包装的 RunnableFuture 返回</div><div class="line"></div><div class="line">由上面的简单定义，可以看到 submit 方法是通过将传入的真实任务进行包装，包装成 Future 的子类后提交执行并将其返回，接下来 newTaskFor 方法的定义如下：</div><div class="line">```Java</div><div class="line">    <span class="comment">/**</span></div><div class="line">     * Returns a &#123;<span class="doctag">@code</span> RunnableFuture&#125; for the given runnable and default</div><div class="line">     * value.</div><div class="line">     *</div><div class="line">     * <span class="doctag">@param</span> runnable the runnable task being wrapped</div><div class="line">     * <span class="doctag">@param</span> value the default value for the returned future</div><div class="line">     * <span class="doctag">@param</span> &lt;T&gt; the type of the given value</div><div class="line">     * <span class="doctag">@return</span> a &#123;<span class="doctag">@code</span> RunnableFuture&#125; which, when run, will run the</div><div class="line">     * underlying runnable and which, as a &#123;<span class="doctag">@code</span> Future&#125;, will yield</div><div class="line">     * the given value as its result and provide for cancellation of</div><div class="line">     * the underlying task</div><div class="line">     * <span class="doctag">@since</span> 1.6</div><div class="line">     */</div><div class="line">    <span class="keyword">protected</span> &lt;T&gt; <span class="function">RunnableFuture&lt;T&gt; <span class="title">newTaskFor</span><span class="params">(Runnable runnable, T value)</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">new</span> FutureTask&lt;T&gt;(runnable, value);</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
+<p>该方法定义也比较简单，相当于是对runnable进行包装，然后返回 FutureTask 供执行并返回（在此先暂时省略掉有关于 Future 概念及实现的介绍）。</p>
+<p>重新回到 submit 方法的定义，在获取到包装的 RunnableFuture 后，会通过execute(Runnable)方法真正的提交任务到具体执行逻辑。</p>
+<h4 id="execute-方法"><a href="#execute-方法" class="headerlink" title="execute 方法"></a>execute 方法</h4><p>Executor中，定义了 <code>execute(Runnable)</code> 方法。该方法的定义表达了该方法的目的是用于在未来某个时间执行一个任务，执行任务的方式可以是用线程池中创建好的线程、创建新的线程等等。该方法在具体实现中，可以根据实际的需求进行实现，我们此刻关心的便是 <code>ThreadPoolExecutor</code> 中该方法的实现。实现具体如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line"> * Executes the given task sometime in the future.  The task</div><div class="line"> * may execute in a new thread or in an existing pooled thread.</div><div class="line"> *</div><div class="line"> * If the task cannot be submitted for execution, either because this</div><div class="line"> * executor has been shutdown or because its capacity has been reached,</div><div class="line"> * the task is handled by the current &#123;<span class="doctag">@code</span> RejectedExecutionHandler&#125;.</div><div class="line"> *</div><div class="line"> * <span class="doctag">@param</span> command the task to execute</div><div class="line"> * <span class="doctag">@throws</span> RejectedExecutionException at discretion of</div><div class="line"> *         &#123;<span class="doctag">@code</span> RejectedExecutionHandler&#125;, if the task</div><div class="line"> *         cannot be accepted for execution</div><div class="line"> * <span class="doctag">@throws</span> NullPointerException if &#123;<span class="doctag">@code</span> command&#125; is null</div><div class="line"> */</div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(Runnable command)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (command == <span class="keyword">null</span>)</div><div class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException();</div><div class="line">    <span class="comment">/*</span></div><div class="line">     * Proceed in 3 steps:</div><div class="line">     *</div><div class="line">     * 1. If fewer than corePoolSize threads are running, try to</div><div class="line">     * start a new thread with the given command as its first</div><div class="line">     * task.  The call to addWorker atomically checks runState and</div><div class="line">     * workerCount, and so prevents false alarms that would add</div><div class="line">     * threads when it shouldn't, by returning false.</div><div class="line">     *</div><div class="line">     * 2. If a task can be successfully queued, then we still need</div><div class="line">     * to double-check whether we should have added a thread</div><div class="line">     * (because existing ones died since last checking) or that</div><div class="line">     * the pool shut down since entry into this method. So we</div><div class="line">     * recheck state and if necessary roll back the enqueuing if</div><div class="line">     * stopped, or start a new thread if there are none.</div><div class="line">     *</div><div class="line">     * 3. If we cannot queue task, then we try to add a new</div><div class="line">     * thread.  If it fails, we know we are shut down or saturated</div><div class="line">     * and so reject the task.</div><div class="line">     */</div><div class="line">    <span class="keyword">int</span> c = ctl.get();</div><div class="line">    <span class="keyword">if</span> (workerCountOf(c) &lt; corePoolSize) &#123;</div><div class="line">        <span class="keyword">if</span> (addWorker(command, <span class="keyword">true</span>))</div><div class="line">            <span class="keyword">return</span>;</div><div class="line">        c = ctl.get();</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">if</span> (isRunning(c) &amp;&amp; workQueue.offer(command)) &#123;</div><div class="line">        <span class="keyword">int</span> recheck = ctl.get();</div><div class="line">        <span class="keyword">if</span> (! isRunning(recheck) &amp;&amp; remove(command))</div><div class="line">            reject(command);</div><div class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (workerCountOf(recheck) == <span class="number">0</span>)</div><div class="line">            addWorker(<span class="keyword">null</span>, <span class="keyword">false</span>);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (!addWorker(command, <span class="keyword">false</span>))</div><div class="line">        reject(command);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>以上短短不到20行的主要代码便是线程池特有的任务执行逻辑实现，由代码和注释可以看出主要有三部分策略：</p>
+<ul>
+<li>判断正在运行的线程数是否比配置的核心线程数少，如果少的话则直接创建新线程并将该任务提交给这一线程执行，这部分具体逻辑由<code>addWorker(Runnable, boolean)</code> 方法来实现，如果成功，流程结束；</li>
+<li>运行线程已经等于配置的核心线程数后，会尝试将任务放入线程池等待队列，成功后仍然会通过双检锁来判断是否需要启动新线程以及判断线程池是否已经停止。</li>
+<li>如果任务放入等待队列失败，仍然会继续尝试去添加新线程，如果还是失败，那就真的说明线程池已经饱和或者已经停止了，任务被拒绝</li>
+</ul>
+<p>从以上三个流程，可以了解到线程池执行的原理，对线程池执行任务的思路有基本的掌握。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>通过通篇的简单介绍，相信在看的你已经对线程池有了一些了解。ThreadPoolExecutor作为JUC中的经典实现，其多处涉及到多线程同步的操作（例如并发取任务的锁控制、提交任务时的检测机制）等，均有着可取之处。同时其submit与execute方法也是一个比较容易争论的点。线程池的神秘面纱也只是揭开了冰山一角，剩下的更深层次的源码阅读还会继续进行。</p>
+<p>接下来对线程池的理解，将分为如下几个议题开启：</p>
+<ul>
+<li>ctl的巧妙设计</li>
+<li>execute与submit深入了解</li>
+<li>ThreadPoolExecutor的并发设计</li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java并发/" rel="tag"># Java并发</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/12/15/重谈HashMap（二）/" rel="next" title="重谈HashMap（二）">
+                <i class="fa fa-chevron-left"></i> 重谈HashMap（二）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么使用线程池"><span class="nav-number">1.</span> <span class="nav-text">为什么使用线程池</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ThreadPoolExecutor"><span class="nav-number">2.</span> <span class="nav-text">ThreadPoolExecutor</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#前序"><span class="nav-number">2.1.</span> <span class="nav-text">前序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ThreadPoolExecutor的初始化"><span class="nav-number">2.2.</span> <span class="nav-text">ThreadPoolExecutor的初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#提交任务"><span class="nav-number">2.3.</span> <span class="nav-text">提交任务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#submit-方法"><span class="nav-number">2.3.1.</span> <span class="nav-text">submit 方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#execute-方法"><span class="nav-number">2.3.2.</span> <span class="nav-text">execute 方法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">3.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
