@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="elasticsearch,大数据," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="需要编译Kibana的背景目前所在的公司使用的Elasticsearch大多是5.4.3版本，使用自研插件的方式，通过添加自研header实现了索引级别的鉴权。 此种方式的鉴权便要求所有到es的请求都必须添加指定的自定义header。在这种场景下，kibana也应该配置自定义header，以适配自研的鉴权。  经调查，Kibana可以通过配置 elasticsearch.customHeaders">
+<meta name="keywords" content="elasticsearch,大数据">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kibana编译坑记">
+<meta property="og:url" content="https://jaydenransom.github.io/2021/06/17/Kibana编译坑记/index.html">
+<meta property="og:site_name" content="JaydenRansom&#39;s Blog">
+<meta property="og:description" content="需要编译Kibana的背景目前所在的公司使用的Elasticsearch大多是5.4.3版本，使用自研插件的方式，通过添加自研header实现了索引级别的鉴权。 此种方式的鉴权便要求所有到es的请求都必须添加指定的自定义header。在这种场景下，kibana也应该配置自定义header，以适配自研的鉴权。  经调查，Kibana可以通过配置 elasticsearch.customHeaders">
+<meta property="og:updated_time" content="2021-06-17T10:29:38.540Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kibana编译坑记">
+<meta name="twitter:description" content="需要编译Kibana的背景目前所在的公司使用的Elasticsearch大多是5.4.3版本，使用自研插件的方式，通过添加自研header实现了索引级别的鉴权。 此种方式的鉴权便要求所有到es的请求都必须添加指定的自定义header。在这种场景下，kibana也应该配置自定义header，以适配自研的鉴权。  经调查，Kibana可以通过配置 elasticsearch.customHeaders">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaydenransom.github.io/2021/06/17/Kibana编译坑记/"/>
+
+
+
+
+
+  <title>Kibana编译坑记 | JaydenRansom's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">JaydenRansom's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Java初级码农</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://jaydenransom.github.io/2021/06/17/Kibana编译坑记/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jayden Ransom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JaydenRansom's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Kibana编译坑记</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-06-17T16:58:51+08:00">
+                2021-06-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/elasticsearch/" itemprop="url" rel="index">
+                    <span itemprop="name">elasticsearch</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="需要编译Kibana的背景"><a href="#需要编译Kibana的背景" class="headerlink" title="需要编译Kibana的背景"></a>需要编译Kibana的背景</h1><p>目前所在的公司使用的Elasticsearch大多是5.4.3版本，使用自研插件的方式，通过添加自研header实现了索引级别的鉴权。</p>
+<p>此种方式的鉴权便要求所有到es的请求都必须添加指定的自定义header。在这种场景下，kibana也应该配置自定义header，以适配自研的鉴权。 </p>
+<p>经调查，Kibana可以通过配置 elasticsearch.customHeaders 属性来添加自定义header。本以为到这就可以完成调试安心使用kibana对接开启自研权限的Elasticsearch了，但是调试的时候发现，面板可以正常使用，而DevTools并不能正确发送请求，经查看发现，DevTools中发送的请求并没有带上自定义的header，再通过科学搜索，发现这确实是es的一个bug，已经在高版本修复。</p>
+<p>根据官方issue显示，该bug被解决的版本，最低是 kibana 5.5.2。而由于kibana兼容性只能保持在第三位版本号，故无法使用修复该问题的5.5.2版本kibana来配合5.4.3，因此便需要自行修改5.4.x版本来patch这个问题，也就需要自己修改kibana代码并进行相应的release。</p>
+<h1 id="Kibana-源码架构"><a href="#Kibana-源码架构" class="headerlink" title="Kibana 源码架构"></a>Kibana 源码架构</h1><p>了解一个开源项目，首先需要了解其工程的架构。一个工程的架构，主要包括以下几个部分： </p>
+<ul>
+<li>项目分支管理模式：项目按照什么模式来进行拉分支，版本release与分支的关系 </li>
+<li>项目主要语言与框架：项目使用什么语言开发，同时使用了哪些该语言之上的框架</li>
+<li>依赖管理模式：项目采用何种依赖管理工具，来管理第三方依赖 </li>
+<li>构建模式：项目采用何种构建工具进行构建 </li>
+</ul>
+<p>以上四个问题，是开始学习/二次开发一个开源项目的基石，下面我们就按照这些问题，来进行Kibana的解读。</p>
+<h3 id="Kibana-分支管理"><a href="#Kibana-分支管理" class="headerlink" title="Kibana 分支管理"></a>Kibana 分支管理</h3><p>由github中浏览kibana仓库的分支，可看出其分支以二位版本号为基准，如5.4、6.3。在此基础上查看其tag，可以看到tag是三位版本，如v5.4.3。由此些信息可以总结到，Kibana的代码组织结构也是遵循了开源软件的一贯标准，即分支以二位版本号命名，在二位版本号的分支上，持续release三位版本号号的具体版本，并在release的同时使用tag进行标记管理。 </p>
+<p>了解了Kibana的分支管理，我们也可以明确我们的目标，即在5.4分支上修复问题，并发布snapshot和release。具体的工作流也可以定义为：fork仓库 -&gt; clone 5.4分支代码 -&gt; 修改 -&gt; 运行调试 -&gt; 发布shapshot -&gt; 发布release</p>
+<h3 id="项目语言及依赖管理体系"><a href="#项目语言及依赖管理体系" class="headerlink" title="项目语言及依赖管理体系"></a>项目语言及依赖管理体系</h3><p>由源码可知，Kibana其实并没有过多的复杂业务逻辑，主要是起到一个dashboard作用，其多维度的聚合主要是通过拼接DSL交由Elasticsearch执行得到，可能是基于此考量（仅猜测），Kibana是使用NodeJS开发。其依赖也随之由npm管理。在官方的 CONTRIBUTING.md 中，针对于依赖下载和启动均有具体的介绍，故在此不过多赘述，仅针对自身遇到的坑，进行记录。</p>
+<p>在Kibana的源码下载编译过程中，主要出现了如下问题：</p>
+<ol>
+<li><p>通过npm install 无法自动下载，很多包需要手动下载。该问题使用npm官方源和淘宝源均无法解决，最终换用yarn管理依赖解决；</p>
+</li>
+<li><p>本地有使用brew安装的v12.x.x的高版本node，但是Kibana 5.4源码需要依赖6.x.x版本node。该问题通过引入了nvm来解决。</p>
+</li>
+</ol>
+<p>Kibana整体使用NodeJS，项目本身并不是特别繁重，所以编译起来并没有很多坑，主要的坑便是上述两个问题。</p>
+<h3 id="使用nvm管理多版本node"><a href="#使用nvm管理多版本node" class="headerlink" title="使用nvm管理多版本node"></a>使用nvm管理多版本node</h3><p>通常涉及到历史代码的维护场景，都需要本地开发环境有多版本的sdk。在NodeJS的环境中，nvm是一个node管理工具，可以用其来管理多版本node，并通过nvm命令实现多版本node的下载，切换。</p>
+<p>nvm 在 MacOS 上可以很容易的通过 Homebrew 进行安装，并配置，简单记录如下：</p>
+<ol>
+<li><p>执行使用brew下载nvm</p>
+   <figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">brew install nvm</div></pre></td></tr></table></figure>
+</li>
+<li><p>追加如下两行到环境变量，本例中为 ~/.bash_profile</p>
+   <figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">export</span> NVM_DIR=~/.nvm</div><div class="line"><span class="built_in">source</span> $(brew --prefix nvm)/nvm.sh</div></pre></td></tr></table></figure>
+</li>
+<li><p>完成后使环境变量生效（可采用source的方式），即可使用nvm管理node。常用命令如下：</p>
+   <figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 查看远端可用node版本</span></div><div class="line">nvm ls-remote</div><div class="line"><span class="comment"># 下载某版本node</span></div><div class="line">nvm install &lt;version&gt;</div><div class="line"><span class="comment"># 使用某版本node</span></div><div class="line">nvm use &lt;version&gt;</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>通过以上操作，便可以足够日常使用。有了nvm，便可以在不同项目的开发周期中，动态切换node版本，实现一机多版本，方便开发。</p>
+<h3 id="使用yarn替代npm"><a href="#使用yarn替代npm" class="headerlink" title="使用yarn替代npm"></a>使用yarn替代npm</h3><p>使用nvm方案后，关于Kibana 5.4 版本所需node版本较低的问题已经完美解决，剩下的一个老大难便是依赖下载的问题。 在官方的说明中，可使用npm作为包管理器，通过预定义的 package.json 依赖描述文件来进行依赖下载。但实际操作中，由于某些不可抗力原因，导致无论使用npm官方源还是淘宝源，都没有办法顺利完成依赖下载，在十分苦恼时，Google搜索一篇关于 yarn 包管理器的使用，映入了眼帘。由于主业是后端+大数据，看到yarn第一反应是这个东西怎么还能管理NodeJS，看过之后才知道，此 yarn 非彼 Yarn。yarn可以替代npm作为包管理器来管理依赖，方式同样可以通过package.json来管理，在绝望之时，安装了yarn来试试。</p>
+<p>yarn 在 MacOS 上同样可以很容易通过 Homebrew 进行安装并使用，简单记录如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 使用 Homebrew 安装 yarn</span></div><div class="line">brew install yarn</div><div class="line"><span class="comment"># 使用 yarn 下载依赖</span></div><div class="line">yarn install</div><div class="line"><span class="comment"># 使用 yarn 下载依赖，忽略定义的node版本</span></div><div class="line">yarn install --ignore-engines</div></pre></td></tr></table></figure></p>
+<p>通过使用yarn，成功下载了依赖，项目继续npm start，也可正常运行。 关于yarn和npm的具体比较由于了解不深入，在此不进行过多赘述。但是如果遇到npm下载有问题，可以使用yarn试试，没准会同样有意外惊喜。</p>
+<p>源码改动<br>成功下载依赖并完成工程运行，便可以进入代码改造的阶段。由于github中针对此issue已经有提过pr，所以代码改动并不难，可以完全参考pr来进行修改，主要就是在设置header的时候添加一些逻辑，读取配置并添加。 具体需要修改文件为 src/core_plugins/console/index.js 。仅需要改动下header生成逻辑即可，具体可参考Respects ES customHeaders config for Console</p>
+<h1 id="浅探Kibana打包机制"><a href="#浅探Kibana打包机制" class="headerlink" title="浅探Kibana打包机制"></a>浅探Kibana打包机制</h1><p>源码改动后，本以为可以直接成功打包，但是发现打包的过程中，依旧会因为下载依赖导致卡住。由于之前已经了解了 npm install 在该项目的依赖中无法正确运行，故怀疑此处卡住也是因为执行了 npm install 导致的。 有了基本的思路后，剩下就是需要了解Kibana打包的机制，找到对应命令修改成yarn并测试。 </p>
+<p>在查看Kibana项目结构的时候，可以直接看到根目录的 Gruntfile.js，由此可以看出Kibana项目是使用Grunt来进行构建的。同样，通过 package.json 对于 build 命令的描述中，也可看到 grunt 的影子。 在GruntFile定义中，可以找到项目打包时task的定义，即 tasks/build 目录，在该文件下搜索 npm install 便可定位到 install_npm_deps.js 文件，修改该文件内命令为 yarn ，便可成功下载。</p>
+<p>至此，修复了 bug 的 kibana 已经可以正常的调试，打包和发布。</p>
+<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>本篇文章主要是记录一次踩坑记。</p>
+<p>由于之前一直主要以Java/Golang为主要语言从事后端开发，对于NodeJS相关技术栈了解并不多。但是其实在解决问题上，有很多思路是想通的、不区分语言的。</p>
+<p>比如说对于开源项目的源码级别研究，首先肯定需要按照上文说的一样，了解分支管理、项目语言特性、项目依赖管理模式以及打包和构建。通常情况下，开源项目都会有关于运行、调试以及构建的说明文档，可以按照其文档进行了解。在此基础上，由于初次开始，对项目肯定有很多不了解的地方，这也就会出现我们常说的“坑”。“坑”这个东西，可能每个人遇到的都会不一样，但是其实处理起来，是可以有相似的思路的。如同上文中介绍的坑一样，问题出现可能让人摸不到头脑，但是和以往的经验相结合，往往就可以想出一些另辟蹊径的思路。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/elasticsearch-大数据/" rel="tag"># elasticsearch,大数据</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/08/16/线程池探幽（一）/" rel="next" title="线程池探幽（一）">
+                <i class="fa fa-chevron-left"></i> 线程池探幽（一）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="http://ot4u9yaqn.bkt.clouddn.com/avator/logo.jpg"
+               alt="Jayden Ransom" />
+          <p class="site-author-name" itemprop="name">Jayden Ransom</p>
+           
+              <p class="site-description motion-element" itemprop="description">随笔记录学习历程</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#需要编译Kibana的背景"><span class="nav-number">1.</span> <span class="nav-text">需要编译Kibana的背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Kibana-源码架构"><span class="nav-number">2.</span> <span class="nav-text">Kibana 源码架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Kibana-分支管理"><span class="nav-number">2.0.1.</span> <span class="nav-text">Kibana 分支管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#项目语言及依赖管理体系"><span class="nav-number">2.0.2.</span> <span class="nav-text">项目语言及依赖管理体系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用nvm管理多版本node"><span class="nav-number">2.0.3.</span> <span class="nav-text">使用nvm管理多版本node</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用yarn替代npm"><span class="nav-number">2.0.4.</span> <span class="nav-text">使用yarn替代npm</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#浅探Kibana打包机制"><span class="nav-number">3.</span> <span class="nav-text">浅探Kibana打包机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jayden Ransom</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
